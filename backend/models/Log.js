@@ -1,25 +1,20 @@
-
 import mongoose from 'mongoose';
 import mongoosePaginate from 'mongoose-paginate-v2';
 
 const logSchema = new mongoose.Schema({
-  // ... your existing schema fields
-
-   action: {
+  action: {
     type: String,
     required: true,
     enum: [
-      'create', 'update', 'delete', 'login', 'logout', 
-      'fee_payment', 'exam_update', 'hostel_allocation'
+      'CREATE', 'UPDATE', 'DELETE', 'LOGIN', 'LOGOUT', 'READ',
+      'FEE_PAYMENT', 'EXAM_UPDATE', 'HOSTEL_ALLOCATION', 'REQUEST'
     ]
   },
- 
   module: {
-  type: String,
-  required: true,
-  enum: ['student', 'fee', 'exam', 'hostel', 'user', 'auth', 'system']
-  // Added 'system' to the enum values
-},
+    type: String,
+    required: true,
+    enum: ['STUDENT', 'FEE', 'EXAM', 'HOSTEL', 'USER', 'AUTH', 'SYSTEM']
+  },
   description: {
     type: String,
     required: true
@@ -53,16 +48,12 @@ const logSchema = new mongoose.Schema({
   timestamps: true
 });
 
-// Add pagination plugin
 logSchema.plugin(mongoosePaginate);
 
-// ... rest of your existing Log model code
-// Index for better query performance
 logSchema.index({ createdAt: -1 });
 logSchema.index({ module: 1, action: 1 });
 logSchema.index({ performedBy: 1 });
 
-// Static method to create log entry
 logSchema.statics.createLog = async function(logData) {
   try {
     const log = new this(logData);
@@ -74,7 +65,6 @@ logSchema.statics.createLog = async function(logData) {
   }
 };
 
-// Static method to get logs with pagination
 logSchema.statics.getLogs = async function(query = {}, page = 1, limit = 50) {
   try {
     const skip = (page - 1) * limit;

@@ -1,37 +1,30 @@
 import Log from '../models/Log.js';
 import { LOG_ACTIONS, LOG_MODULES } from '../utils/constants.js';
 
-// Middleware to log HTTP requests
 const requestLogger = async (req, res, next) => {
   const start = Date.now();
 
   res.on('finish', async () => {
     try {
       const duration = Date.now() - start;
-      
-      // Skip logging for these paths
       const excludedPaths = ['/api/auth/login', '/api/auth/register', '/health'];
       if (excludedPaths.includes(req.path)) {
         return;
       }
 
-      // Determine module based on route path
-      let module = LOG_MODULES.AUTH; // default to auth
+      let module = LOG_MODULES.AUTH;
       if (req.path.startsWith('/api/students')) module = LOG_MODULES.STUDENT;
       else if (req.path.startsWith('/api/fees')) module = LOG_MODULES.FEE;
       else if (req.path.startsWith('/api/exams')) module = LOG_MODULES.EXAM;
       else if (req.path.startsWith('/api/hostels')) module = LOG_MODULES.HOSTEL;
-      else if (req.path.startsWith('/api/auth')) module = LOG_MODULES.AUTH;
       else if (req.path.startsWith('/api/users')) module = LOG_MODULES.USER;
 
-      // Determine action based on HTTP method
-      let action = 'request';
+      let action = 'REQUEST';
       if (req.method === 'POST') action = LOG_ACTIONS.CREATE;
       else if (req.method === 'PUT' || req.method === 'PATCH') action = LOG_ACTIONS.UPDATE;
       else if (req.method === 'DELETE') action = LOG_ACTIONS.DELETE;
-      else if (req.method === 'GET') action = 'read';
+      else if (req.method === 'GET') action = 'READ';
 
-      // Only log if we have a user (after authentication)
       if (req.user && req.user._id) {
         await Log.createLog({
           action,
@@ -56,15 +49,12 @@ const requestLogger = async (req, res, next) => {
   next();
 };
 
-// Helper function to create custom log entries
 const createLogEntry = async (logData) => {
   try {
-    // Ensure module is valid
     if (!Object.values(LOG_MODULES).includes(logData.module)) {
-      logData.module = LOG_MODULES.AUTH; // default to auth
+      logData.module = LOG_MODULES.AUTH;
     }
     
-    // Ensure performedBy is provided
     if (!logData.performedBy) {
       console.warn('Skipping log entry: performedBy is required');
       return;
@@ -76,7 +66,6 @@ const createLogEntry = async (logData) => {
   }
 };
 
-// Middleware to log specific actions
 const actionLogger = (action, module, description) => {
   return async (req, res, next) => {
     try {
