@@ -2,6 +2,9 @@ import express from 'express';
 import { auth, authorize } from '../middleware/auth.js';
 import Exam from '../models/Exam.js';
 import Student from '../models/Student.js';
+import { createLogEntry } from '../middleware/logging.js';
+import { sendExamResult } from '../utils/emailService.js';
+import { LOG_ACTIONS, LOG_MODULES, RESPONSE_MESSAGES } from '../utils/constants.js';
 
 const router = express.Router();
 
@@ -62,7 +65,7 @@ router.get('/student/:studentId', auth, async (req, res) => {
     const student = await Student.findOne({ studentId: req.params.studentId });
     
     if (!student) {
-      return res.status(404).json({ message: 'Student not found' });
+      return res.status(404).json({ message: RESPONSE_MESSAGES.NOT_FOUND });
     }
     
     const exams = await Exam.find({ student: student._id })
@@ -85,7 +88,7 @@ router.get('/:id', auth, async (req, res) => {
       .populate('conductedBy');
     
     if (!exam) {
-      return res.status(404).json({ message: 'Exam record not found' });
+      return res.status(404).json({ message: RESPONSE_MESSAGES.NOT_FOUND });
     }
     
     res.json(exam);
@@ -105,7 +108,7 @@ router.post('/', auth, authorize('admin', 'staff'), async (req, res) => {
     const student = await Student.findOne({ studentId });
     
     if (!student) {
-      return res.status(404).json({ message: 'Student not found' });
+      return res.status(404).json({ message: RESPONSE_MESSAGES.NOT_FOUND });
     }
     
     const exam = new Exam({
@@ -121,6 +124,28 @@ router.post('/', auth, authorize('admin', 'staff'), async (req, res) => {
       .populate('student')
       .populate('conductedBy');
     
+    // Send email notification
+    try {
+      await sendExamResult(populatedExam, student);
+    } catch (emailError) {
+      console.error('Error sending exam result email:', emailError);
+    }
+    
+    // Log exam creation
+    await createLogEntry({
+      action: LOG_ACTIONS.CREATE,
+      module: LOG_MODULES.EXAM,
+      description: `Exam result recorded: ${exam.subject} for ${student.firstName} ${student.lastName}`,
+      performedBy: req.user._id,
+      targetId: exam._id,
+      targetModel: LOG_MODULES.EXAM,
+      changes: {
+        subject: exam.subject,
+        marks: `${exam.marksObtained}/${exam.maximumMarks}`,
+        grade: exam.grade
+      }
+    });
+    
     res.status(201).json(populatedExam);
   } catch (error) {
     res.status(400).json({ message: error.message });
@@ -135,7 +160,7 @@ router.put('/:id', auth, authorize('admin', 'staff'), async (req, res) => {
     const exam = await Exam.findById(req.params.id);
     
     if (!exam) {
-      return res.status(404).json({ message: 'Exam record not found' });
+      return res.status(404).json({ message: RESPONSE_MESSAGES.NOT_FOUND });
     }
     
     const updatedExam = await Exam.findByIdAndUpdate(
@@ -143,6 +168,17 @@ router.put('/:id', auth, authorize('admin', 'staff'), async (req, res) => {
       req.body,
       { new: true, runValidators: true }
     ).populate('student').populate('conductedBy');
+    
+    // Log exam update
+    await createLogEntry({
+      action: LOG_ACTIONS.UPDATE,
+      module: LOG_MODULES.EXAM,
+      description: `Exam result updated: ${exam.subject} for ${exam.student?.firstName}`,
+      performedBy: req.user._id,
+      targetId: exam._id,
+      targetModel: LOG_MODULES.EXAM,
+      changes: req.body
+    });
     
     res.json(updatedExam);
   } catch (error) {
@@ -158,12 +194,22 @@ router.delete('/:id', auth, authorize('admin'), async (req, res) => {
     const exam = await Exam.findById(req.params.id);
     
     if (!exam) {
-      return res.status(404).json({ message: 'Exam record not found' });
+      return res.status(404).json({ message: RESPONSE_MESSAGES.NOT_FOUND });
     }
     
     await Exam.findByIdAndDelete(req.params.id);
     
-    res.json({ message: 'Exam record removed' });
+    // Log exam deletion
+    await createLogEntry({
+      action: LOG_ACTIONS.DELETE,
+      module: LOG_MODULES.EXAM,
+      description: `Exam result deleted: ${exam.subject} for ${exam.student?.firstName}`,
+      performedBy: req.user._id,
+      targetId: exam._id,
+      targetModel: LOG_MODULES.EXAM
+    });
+    
+    res.json({ message: RESPONSE_MESSAGES.DELETED });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

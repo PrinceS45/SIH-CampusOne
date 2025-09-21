@@ -2,6 +2,8 @@ import express from 'express';
 import { auth, authorize } from '../middleware/auth.js';
 import { Hostel, Room } from '../models/Hostel.js';
 import Student from '../models/Student.js';
+import { createLogEntry } from '../middleware/logging.js';
+import { LOG_ACTIONS, LOG_MODULES, RESPONSE_MESSAGES } from '../utils/constants.js';
 
 const router = express.Router();
 
@@ -25,7 +27,7 @@ router.get('/:id', auth, async (req, res) => {
     const hostel = await Hostel.findById(req.params.id).populate('rooms');
     
     if (!hostel) {
-      return res.status(404).json({ message: 'Hostel not found' });
+      return res.status(404).json({ message: RESPONSE_MESSAGES.NOT_FOUND });
     }
     
     res.json(hostel);
@@ -41,6 +43,18 @@ router.post('/', auth, authorize('admin'), async (req, res) => {
   try {
     const hostel = new Hostel(req.body);
     await hostel.save();
+    
+    // Log hostel creation
+    await createLogEntry({
+      action: LOG_ACTIONS.CREATE,
+      module: LOG_MODULES.HOSTEL,
+      description: `New hostel created: ${hostel.name}`,
+      performedBy: req.user._id,
+      targetId: hostel._id,
+      targetModel: LOG_MODULES.HOSTEL,
+      changes: req.body
+    });
+    
     res.status(201).json(hostel);
   } catch (error) {
     res.status(400).json({ message: error.message });
@@ -59,8 +73,19 @@ router.put('/:id', auth, authorize('admin'), async (req, res) => {
     );
     
     if (!hostel) {
-      return res.status(404).json({ message: 'Hostel not found' });
+      return res.status(404).json({ message: RESPONSE_MESSAGES.NOT_FOUND });
     }
+    
+    // Log hostel update
+    await createLogEntry({
+      action: LOG_ACTIONS.UPDATE,
+      module: LOG_MODULES.HOSTEL,
+      description: `Hostel updated: ${hostel.name}`,
+      performedBy: req.user._id,
+      targetId: hostel._id,
+      targetModel: LOG_MODULES.HOSTEL,
+      changes: req.body
+    });
     
     res.json(hostel);
   } catch (error) {
@@ -76,7 +101,7 @@ router.delete('/:id', auth, authorize('admin'), async (req, res) => {
     const hostel = await Hostel.findById(req.params.id);
     
     if (!hostel) {
-      return res.status(404).json({ message: 'Hostel not found' });
+      return res.status(404).json({ message: RESPONSE_MESSAGES.NETWORK_ERROR });
     }
     
     // Check if hostel has rooms with students
@@ -97,7 +122,17 @@ router.delete('/:id', auth, authorize('admin'), async (req, res) => {
     // Delete the hostel
     await Hostel.findByIdAndDelete(req.params.id);
     
-    res.json({ message: 'Hostel removed' });
+    // Log hostel deletion
+    await createLogEntry({
+      action: LOG_ACTIONS.DELETE,
+      module: LOG_MODULES.HOSTEL,
+      description: `Hostel deleted: ${hostel.name}`,
+      performedBy: req.user._id,
+      targetId: hostel._id,
+      targetModel: LOG_MODULES.HOSTEL
+    });
+    
+    res.json({ message: RESPONSE_MESSAGES.DELETED });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -137,7 +172,7 @@ router.post('/:id/rooms', auth, authorize('admin'), async (req, res) => {
     const hostel = await Hostel.findById(req.params.id);
     
     if (!hostel) {
-      return res.status(404).json({ message: 'Hostel not found' });
+      return res.status(404).json({ message: RESPONSE_MESSAGES.NOT_FOUND });
     }
     
     const room = new Room({
@@ -149,6 +184,17 @@ router.post('/:id/rooms', auth, authorize('admin'), async (req, res) => {
     
     // Update hostel room counts
     await hostel.updateRoomCounts();
+    
+    // Log room creation
+    await createLogEntry({
+      action: LOG_ACTIONS.CREATE,
+      module: LOG_MODULES.HOSTEL,
+      description: `New room created: ${room.roomNumber} in ${hostel.name}`,
+      performedBy: req.user._id,
+      targetId: room._id,
+      targetModel: 'Room',
+      changes: req.body
+    });
     
     res.status(201).json(room);
   } catch (error) {
@@ -168,11 +214,22 @@ router.put('/rooms/:roomId', auth, authorize('admin'), async (req, res) => {
     ).populate('hostel');
     
     if (!room) {
-      return res.status(404).json({ message: 'Room not found' });
+      return res.status(404).json({ message: RESPONSE_MESSAGES.NOT_FOUND });
     }
     
     // Update hostel room counts
     await room.hostel.updateRoomCounts();
+    
+    // Log room update
+    await createLogEntry({
+      action: LOG_ACTIONS.UPDATE,
+      module: LOG_MODULES.HOSTEL,
+      description: `Room updated: ${room.roomNumber} in ${room.hostel.name}`,
+      performedBy: req.user._id,
+      targetId: room._id,
+      targetModel: 'Room',
+      changes: req.body
+    });
     
     res.json(room);
   } catch (error) {
@@ -188,7 +245,7 @@ router.delete('/rooms/:roomId', auth, authorize('admin'), async (req, res) => {
     const room = await Room.findById(req.params.roomId);
     
     if (!room) {
-      return res.status(404).json({ message: 'Room not found' });
+      return res.status(404).json({ message: RESPONSE_MESSAGES.NOT_FOUND });
     }
     
     if (room.currentOccupancy > 0) {
@@ -203,7 +260,17 @@ router.delete('/rooms/:roomId', auth, authorize('admin'), async (req, res) => {
     const hostel = await Hostel.findById(room.hostel);
     await hostel.updateRoomCounts();
     
-    res.json({ message: 'Room removed' });
+    // Log room deletion
+    await createLogEntry({
+      action: LOG_ACTIONS.DELETE,
+      module: LOG_MODULES.HOSTEL,
+      description: `Room deleted: ${room.roomNumber} from ${hostel.name}`,
+      performedBy: req.user._id,
+      targetId: room._id,
+      targetModel: 'Room'
+    });
+    
+    res.json({ message: RESPONSE_MESSAGES.DELETED });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -218,12 +285,12 @@ router.post('/allocate', auth, authorize('admin', 'staff'), async (req, res) => 
     
     const student = await Student.findOne({ studentId });
     if (!student) {
-      return res.status(404).json({ message: 'Student not found' });
+      return res.status(404).json({ message: RESPONSE_MESSAGES.NOT_FOUND });
     }
     
     const room = await Room.findById(roomId);
     if (!room) {
-      return res.status(404).json({ message: 'Room not found' });
+      return res.status(404).json({ message: RESPONSE_MESSAGES.NOT_FOUND });
     }
     
     // Check if room is available
@@ -263,6 +330,21 @@ router.post('/allocate', auth, authorize('admin', 'staff'), async (req, res) => 
     // Update hostel room counts
     await hostel.updateRoomCounts();
     
+    // Log room allocation
+    await createLogEntry({
+      action: LOG_ACTIONS.HOSTEL_ALLOCATION,
+      module: LOG_MODULES.HOSTEL,
+      description: `Room allocated: ${room.roomNumber} to ${student.firstName} ${student.lastName}`,
+      performedBy: req.user._id,
+      targetId: student._id,
+      targetModel: LOG_MODULES.STUDENT,
+      changes: {
+        hostel: hostel.name,
+        room: room.roomNumber,
+        student: student.studentId
+      }
+    });
+    
     res.json({ 
       message: 'Room allocated successfully',
       student,
@@ -282,7 +364,7 @@ router.post('/deallocate', auth, authorize('admin', 'staff'), async (req, res) =
     
     const student = await Student.findOne({ studentId }).populate('room');
     if (!student) {
-      return res.status(404).json({ message: 'Student not found' });
+      return res.status(404).json({ message: RESPONSE_MESSAGES.NOT_FOUND });
     }
     
     if (!student.room) {
@@ -293,7 +375,7 @@ router.post('/deallocate', auth, authorize('admin', 'staff'), async (req, res) =
     
     const room = await Room.findById(student.room);
     if (!room) {
-      return res.status(404).json({ message: 'Room not found' });
+      return res.status(404).json({ message: RESPONSE_MESSAGES.NOT_FOUND });
     }
     
     // Deallocate room from student
@@ -307,6 +389,21 @@ router.post('/deallocate', auth, authorize('admin', 'staff'), async (req, res) =
     // Update hostel room counts
     const hostel = await Hostel.findById(room.hostel);
     await hostel.updateRoomCounts();
+    
+    // Log room deallocation
+    await createLogEntry({
+      action: LOG_ACTIONS.HOSTEL_ALLOCATION,
+      module: LOG_MODULES.HOSTEL,
+      description: `Room deallocated: ${room.roomNumber} from ${student.firstName} ${student.lastName}`,
+      performedBy: req.user._id,
+      targetId: student._id,
+      targetModel: LOG_MODULES.STUDENT,
+      changes: {
+        hostel: hostel.name,
+        room: room.roomNumber,
+        student: student.studentId
+      }
+    });
     
     res.json({ 
       message: 'Room deallocated successfully',

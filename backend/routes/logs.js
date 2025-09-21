@@ -1,7 +1,7 @@
 import express from 'express';
 import { auth, authorize } from '../middleware/auth.js';
 import Log from '../models/Log.js';
-import { LOG_ACTIONS, LOG_MODULES, RESPONSE_MESSAGES } from '../utils/constants.js';
+import { RESPONSE_MESSAGES } from '../utils/constants.js';
 
 const router = express.Router();
 

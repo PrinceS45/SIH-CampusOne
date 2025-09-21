@@ -56,3 +56,12 @@ export const paginate = (array, page, limit) => {
     totalItems: array.length
   };
 };
+
+// Helper to parse JSON safely
+export const safeJsonParse = (str, defaultValue = {}) => {
+  try {
+    return JSON.parse(str);
+  } catch (error) {
+    return defaultValue;
+  }
+};

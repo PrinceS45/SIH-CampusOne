@@ -1,20 +1,43 @@
 import mongoose from 'mongoose';
+import mongoosePaginate from 'mongoose-paginate-v2';
+import Counter from './Counter.js'; // Import the new Counter model
+
+const addressSchema = new mongoose.Schema({
+  street: String,
+  city: String,
+  state: String,
+  zip: String,
+  country: String
+});
+
+const guardianSchema = new mongoose.Schema({
+  name: String,
+  relationship: String,
+  phone: String,
+  email: String
+});
+
+const documentSchema = new mongoose.Schema({
+  name: String,
+  url: String,
+  uploadedAt: {
+    type: Date,
+    default: Date.now
+  }
+});
 
 const studentSchema = new mongoose.Schema({
   studentId: {
     type: String,
-    required: true,
     unique: true
   },
   firstName: {
     type: String,
-    required: true,
-    trim: true
+    required: true
   },
   lastName: {
     type: String,
-    required: true,
-    trim: true
+    required: true
   },
   email: {
     type: String,
@@ -22,32 +45,11 @@ const studentSchema = new mongoose.Schema({
     unique: true,
     lowercase: true
   },
-  phone: {
-    type: String,
-    required: true
-  },
-  dateOfBirth: {
-    type: Date,
-    required: true
-  },
-  gender: {
-    type: String,
-    enum: ['male', 'female', 'other'],
-    required: true
-  },
-  address: {
-    street: String,
-    city: String,
-    state: String,
-    zipCode: String,
-    country: String
-  },
-  guardian: {
-    name: String,
-    relationship: String,
-    phone: String,
-    email: String
-  },
+  phone: String,
+  dateOfBirth: Date,
+  gender: String,
+  address: addressSchema,
+  guardian: guardianSchema,
   course: {
     type: String,
     required: true
@@ -58,9 +60,7 @@ const studentSchema = new mongoose.Schema({
   },
   semester: {
     type: Number,
-    required: true,
-    min: 1,
-    max: 8
+    required: true
   },
   admissionDate: {
     type: Date,
@@ -68,21 +68,11 @@ const studentSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ['active', 'inactive', 'completed', 'suspended'],
+    enum: ['active', 'inactive', 'completed', 'dropped'],
     default: 'active'
   },
-  photo: {
-    type: String,
-    default: ''
-  },
-  documents: [{
-    name: String,
-    url: String,
-    uploadedAt: {
-      type: Date,
-      default: Date.now
-    }
-  }],
+  photo: String,
+  documents: [documentSchema],
   hostel: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Hostel'
@@ -95,20 +85,27 @@ const studentSchema = new mongoose.Schema({
   timestamps: true
 });
 
-// Generate student ID before saving
+// Pre-save hook to auto-generate studentId
 studentSchema.pre('save', async function(next) {
   if (this.isNew) {
-    const year = new Date().getFullYear().toString().slice(-2);
-    const count = await mongoose.model('Student').countDocuments();
-    this.studentId = `STU${year}${(count + 1).toString().padStart(4, '0')}`;
+    try {
+      const counter = await Counter.findByIdAndUpdate(
+        { _id: 'studentId' },
+        { $inc: { seq: 1 } },
+        { new: true, upsert: true }
+      );
+      // Format the ID (e.g., STU-00001)
+      this.studentId = `STU-${counter.seq.toString().padStart(5, '0')}`;
+      next();
+    } catch (error) {
+      next(error);
+    }
+  } else {
+    next();
   }
-  next();
 });
 
-// Index for better query performance
-studentSchema.index({ studentId: 1 });
-studentSchema.index({ email: 1 });
-studentSchema.index({ course: 1, branch: 1, semester: 1 });
+studentSchema.plugin(mongoosePaginate);
 
 const Student = mongoose.model('Student', studentSchema);
 

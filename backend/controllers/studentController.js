@@ -1,5 +1,4 @@
 import Student from '../models/Student.js';
-import Log from '../models/Log.js';
 import { createLogEntry } from '../middleware/logging.js';
 import { LOG_ACTIONS, LOG_MODULES, RESPONSE_MESSAGES } from '../utils/constants.js';
 
@@ -72,6 +71,13 @@ const createStudent = async (req, res) => {
   try {
     const studentData = { ...req.body };
     
+    if (studentData.address) {
+      studentData.address = JSON.parse(studentData.address);
+    }
+    if (studentData.guardian) {
+      studentData.guardian = JSON.parse(studentData.guardian);
+    }
+    
     if (req.file) {
       studentData.photo = `/uploads/${req.file.filename}`;
     }
@@ -108,6 +114,13 @@ const updateStudent = async (req, res) => {
     }
     
     const updateData = { ...req.body };
+    
+    if (updateData.address) {
+      updateData.address = JSON.parse(updateData.address);
+    }
+    if (updateData.guardian) {
+      updateData.guardian = JSON.parse(updateData.guardian);
+    }
     
     if (req.file) {
       updateData.photo = `/uploads/${req.file.filename}`;

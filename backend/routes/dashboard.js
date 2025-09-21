@@ -4,6 +4,7 @@ import Student from '../models/Student.js';
 import Fee from '../models/Fee.js';
 import Exam from '../models/Exam.js';
 import { Hostel } from '../models/Hostel.js';
+import { RESPONSE_MESSAGES } from '../utils/constants.js';
 
 const router = express.Router();
 
@@ -134,6 +135,7 @@ router.get('/stats', auth, authorize('admin'), async (req, res) => {
     
     res.json(stats);
   } catch (error) {
+    console.error('Dashboard stats error:', error);
     res.status(500).json({ message: error.message });
   }
 });

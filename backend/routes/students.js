@@ -1,7 +1,9 @@
 import express from 'express';
 import { auth, authorize } from '../middleware/auth.js';
-import upload from '../middleware/upload.js';
+import upload, { handleFileUpload } from '../middleware/upload.js';
 import Student from '../models/Student.js';
+import { createLogEntry } from '../middleware/logging.js';
+import { LOG_ACTIONS, LOG_MODULES, RESPONSE_MESSAGES } from '../utils/constants.js';
 
 const router = express.Router();
 
@@ -58,7 +60,7 @@ router.get('/:id', auth, async (req, res) => {
       .populate('room');
     
     if (!student) {
-      return res.status(404).json({ message: 'Student not found' });
+      return res.status(404).json({ message: RESPONSE_MESSAGES.NOT_FOUND });
     }
     
     res.json(student);
@@ -74,15 +76,48 @@ router.post('/', auth, authorize('admin', 'staff'), upload.single('photo'), asyn
   try {
     const studentData = { ...req.body };
     
+    // Handle address and guardian parsing
+    if (studentData.address) {
+      try {
+        studentData.address = JSON.parse(studentData.address);
+      } catch (e) {
+        // If it's already an object or invalid, keep as is
+      }
+    }
+    
+    if (studentData.guardian) {
+      try {
+        studentData.guardian = JSON.parse(studentData.guardian);
+      } catch (e) {
+        // If it's already an object or invalid, keep as is
+      }
+    }
+    
+    // Handle file upload (Memory storage + Cloudinary)
     if (req.file) {
-      studentData.photo = `/uploads/${req.file.filename}`;
+      const fileInfo = await handleFileUpload(req.file, 'students/photos');
+      if (fileInfo) {
+        studentData.photo = fileInfo.url;
+      }
     }
     
     const student = new Student(studentData);
     await student.save();
     
+    // Log student creation
+    await createLogEntry({
+      action: LOG_ACTIONS.CREATE,
+      module: LOG_MODULES.STUDENT,
+      description: `New student created: ${student.firstName} ${student.lastName} (${student.studentId})`,
+      performedBy: req.user._id,
+      targetId: student._id,
+      targetModel: LOG_MODULES.STUDENT,
+      changes: studentData
+    });
+    
     res.status(201).json(student);
   } catch (error) {
+    console.error('Create student error:', error);
     res.status(400).json({ message: error.message });
   }
 });
@@ -95,13 +130,34 @@ router.put('/:id', auth, authorize('admin', 'staff'), upload.single('photo'), as
     const student = await Student.findById(req.params.id);
     
     if (!student) {
-      return res.status(404).json({ message: 'Student not found' });
+      return res.status(404).json({ message: RESPONSE_MESSAGES.NOT_FOUND });
     }
     
     const updateData = { ...req.body };
     
+    // Handle address and guardian parsing
+    if (updateData.address) {
+      try {
+        updateData.address = JSON.parse(updateData.address);
+      } catch (e) {
+        // If it's already an object or invalid, keep as is
+      }
+    }
+    
+    if (updateData.guardian) {
+      try {
+        updateData.guardian = JSON.parse(updateData.guardian);
+      } catch (e) {
+        // If it's already an object or invalid, keep as is
+      }
+    }
+    
+    // Handle file upload (Memory storage + Cloudinary)
     if (req.file) {
-      updateData.photo = `/uploads/${req.file.filename}`;
+      const fileInfo = await handleFileUpload(req.file, 'students/photos');
+      if (fileInfo) {
+        updateData.photo = fileInfo.url;
+      }
     }
     
     const updatedStudent = await Student.findByIdAndUpdate(
@@ -110,8 +166,20 @@ router.put('/:id', auth, authorize('admin', 'staff'), upload.single('photo'), as
       { new: true, runValidators: true }
     );
     
+    // Log student update
+    await createLogEntry({
+      action: LOG_ACTIONS.UPDATE,
+      module: LOG_MODULES.STUDENT,
+      description: `Student updated: ${student.firstName} ${student.lastName} (${student.studentId})`,
+      performedBy: req.user._id,
+      targetId: student._id,
+      targetModel: LOG_MODULES.STUDENT,
+      changes: updateData
+    });
+    
     res.json(updatedStudent);
   } catch (error) {
+    console.error('Update student error:', error);
     res.status(400).json({ message: error.message });
   }
 });
@@ -124,12 +192,22 @@ router.delete('/:id', auth, authorize('admin'), async (req, res) => {
     const student = await Student.findById(req.params.id);
     
     if (!student) {
-      return res.status(404).json({ message: 'Student not found' });
+      return res.status(404).json({ message: RESPONSE_MESSAGES.NOT_FOUND });
     }
     
     await Student.findByIdAndDelete(req.params.id);
     
-    res.json({ message: 'Student removed' });
+    // Log student deletion
+    await createLogEntry({
+      action: LOG_ACTIONS.DELETE,
+      module: LOG_MODULES.STUDENT,
+      description: `Student deleted: ${student.firstName} ${student.lastName} (${student.studentId})`,
+      performedBy: req.user._id,
+      targetId: student._id,
+      targetModel: LOG_MODULES.STUDENT
+    });
+    
+    res.json({ message: RESPONSE_MESSAGES.DELETED });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -143,19 +221,37 @@ router.post('/:id/documents', auth, authorize('admin', 'staff'), upload.array('d
     const student = await Student.findById(req.params.id);
     
     if (!student) {
-      return res.status(404).json({ message: 'Student not found' });
+      return res.status(404).json({ message: RESPONSE_MESSAGES.NOT_FOUND });
     }
     
-    const documents = req.files.map(file => ({
-      name: file.originalname,
-      url: `/uploads/${file.filename}`
-    }));
+    const documents = [];
+    for (const file of req.files) {
+      const fileInfo = await handleFileUpload(file, 'students/documents');
+      if (fileInfo) {
+        documents.push({
+          name: file.originalname,
+          url: fileInfo.url
+        });
+      }
+    }
     
     student.documents.push(...documents);
     await student.save();
     
+    // Log document upload
+    await createLogEntry({
+      action: LOG_ACTIONS.UPDATE,
+      module: LOG_MODULES.STUDENT,
+      description: `Documents uploaded for student: ${student.firstName} ${student.lastName}`,
+      performedBy: req.user._id,
+      targetId: student._id,
+      targetModel: LOG_MODULES.STUDENT,
+      changes: { documents: documents.map(d => d.name) }
+    });
+    
     res.json(student);
   } catch (error) {
+    console.error('Upload documents error:', error);
     res.status(400).json({ message: error.message });
   }
 });

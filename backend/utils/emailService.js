@@ -1,23 +1,39 @@
 import nodemailer from 'nodemailer';
 
 const createTransporter = () => {
-  return nodemailer.createTransporter({
-    host: process.env.SMTP_HOST,
-    port: process.env.SMTP_PORT,
-    secure: false,
-    auth: {
-      user: process.env.SMTP_USER,
-      pass: process.env.SMTP_PASS,
-    },
-  });
+  try {
+    // Check if SMTP configuration exists
+    if (!process.env.SMTP_HOST || !process.env.SMTP_USER || !process.env.SMTP_PASS) {
+      console.warn('SMTP configuration not found. Email service disabled.');
+      return null;
+    }
+
+    return nodemailer.createTransporter({
+      host: process.env.SMTP_HOST,
+      port: process.env.SMTP_PORT || 587,
+      secure: false,
+      auth: {
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASS,
+      },
+    });
+  } catch (error) {
+    console.error('Error creating email transporter:', error);
+    return null;
+  }
 };
 
 export const sendWelcomeEmail = async (user, password) => {
   try {
     const transporter = createTransporter();
     
+    if (!transporter) {
+      console.warn('Email transporter not available. Skipping welcome email.');
+      return;
+    }
+
     const mailOptions = {
-      from: process.env.SMTP_FROM,
+      from: process.env.SMTP_FROM || process.env.SMTP_USER,
       to: user.email,
       subject: 'Welcome to Student ERP System',
       html: `
@@ -36,6 +52,7 @@ export const sendWelcomeEmail = async (user, password) => {
     };
 
     await transporter.sendMail(mailOptions);
+    console.log('Welcome email sent to:', user.email);
   } catch (error) {
     console.error('Error sending welcome email:', error);
   }
@@ -45,8 +62,13 @@ export const sendFeeReceipt = async (fee, student) => {
   try {
     const transporter = createTransporter();
     
+    if (!transporter) {
+      console.warn('Email transporter not available. Skipping fee receipt email.');
+      return;
+    }
+
     const mailOptions = {
-      from: process.env.SMTP_FROM,
+      from: process.env.SMTP_FROM || process.env.SMTP_USER,
       to: student.email,
       subject: `Fee Receipt - ${fee.receiptNo}`,
       html: `
@@ -72,6 +94,7 @@ export const sendFeeReceipt = async (fee, student) => {
     };
 
     await transporter.sendMail(mailOptions);
+    console.log('Fee receipt email sent to:', student.email);
   } catch (error) {
     console.error('Error sending fee receipt email:', error);
   }
@@ -81,8 +104,13 @@ export const sendExamResult = async (exam, student) => {
   try {
     const transporter = createTransporter();
     
+    if (!transporter) {
+      console.warn('Email transporter not available. Skipping exam result email.');
+      return;
+    }
+
     const mailOptions = {
-      from: process.env.SMTP_FROM,
+      from: process.env.SMTP_FROM || process.env.SMTP_USER,
       to: student.email,
       subject: `Exam Result - ${exam.subject}`,
       html: `
@@ -107,6 +135,7 @@ export const sendExamResult = async (exam, student) => {
     };
 
     await transporter.sendMail(mailOptions);
+    console.log('Exam result email sent to:', student.email);
   } catch (error) {
     console.error('Error sending exam result email:', error);
   }
