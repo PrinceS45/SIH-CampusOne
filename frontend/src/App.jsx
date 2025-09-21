@@ -15,6 +15,9 @@ import ExamForm from './components/exams/ExamForm';
 import ExamResults from './components/exams/ExamResults';
 import DashboardReports from './components/reports/DashboardReports';
 import useAuthStore from "./stores/authStore.js"
+import StudentEdit from './components/students/StudentEdit.jsx';
+import FeeReceipt from './components/fees/FeeReceipt';
+
 
 function App() {
   const { isAuthenticated, user } = useAuthStore();
@@ -88,6 +91,8 @@ function App() {
             </ProtectedRoute>
           } 
         />
+        <Route path="/students/:id/edit" element={<StudentEdit />} />
+
         
         <Route 
           path="/fees" 
@@ -106,6 +111,9 @@ function App() {
             </ProtectedRoute>
           } 
         />
+        
+<Route path="/fees/receipt/:id" element={<FeeReceipt />} />
+
         
         <Route 
           path="/hostels" 

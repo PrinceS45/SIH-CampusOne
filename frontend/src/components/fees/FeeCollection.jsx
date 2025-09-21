@@ -5,11 +5,20 @@ import useStudentStore from '../../stores/studentStore';
 import Table from '../common/Table';
 import Modal from '../common/Modal';
 import Loader from '../common/Loader';
+import { useNavigate } from 'react-router-dom'; // Add this import
+
 
 const FeeCollection = () => {
   const { fees, loading, pagination, filters, getFees, createFee, setFilters } = useFeeStore();
   const { students, getStudents } = useStudentStore();
   const [showFeeModal, setShowFeeModal] = useState(false);
+  const navigate = useNavigate(); // Add this hook
+
+
+  // ADD THESE TWO LINES HERE:
+  const [showReceiptModal, setShowReceiptModal] = useState(false);
+  const [generatedReceipt, setGeneratedReceipt] = useState(null);
+
   const [formData, setFormData] = useState({
     studentId: '',
     academicYear: new Date().getFullYear().toString(),
@@ -27,6 +36,17 @@ const FeeCollection = () => {
     ]
   });
 
+
+  useEffect(() => {
+    getFees({ ...filters, page: 1 });
+    getStudents({ limit: 100 });
+  }, [filters]);
+
+  // ADD THIS DEBUG HOOK:
+  useEffect(() => {
+    console.log('Fees from store:', fees);
+    console.log('Pagination:', pagination);
+  }, [fees, pagination]);
   useEffect(() => {
     getFees({ ...filters, page: 1 });
     getStudents({ limit: 100 }); // Fetch students for dropdown
@@ -49,12 +69,12 @@ const FeeCollection = () => {
   };
 
   const handleBreakdownChange = (index, field, value) => {
-    const updatedBreakdown = formData.breakdown.map((item, i) => 
+    const updatedBreakdown = formData.breakdown.map((item, i) =>
       i === index ? { ...item, [field]: field === 'amount' ? parseFloat(value) || 0 : value } : item
     );
-    
+
     const totalAmount = updatedBreakdown.reduce((sum, item) => sum + item.amount, 0);
-    
+
     setFormData(prev => ({
       ...prev,
       breakdown: updatedBreakdown,
@@ -62,34 +82,55 @@ const FeeCollection = () => {
     }));
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    
-    try {
-      await createFee(formData);
-      setShowFeeModal(false);
-      setFormData({
-        studentId: '',
-        academicYear: new Date().getFullYear().toString(),
-        semester: 1,
-        amount: 0,
-        paidAmount: 0,
-        dueDate: '',
-        paymentMode: 'cash',
-        transactionId: '',
-        breakdown: [
-          { category: 'Tuition Fee', amount: 0 },
-          { category: 'Hostel Fee', amount: 0 },
-          { category: 'Library Fee', amount: 0 },
-          { category: 'Other Charges', amount: 0 }
-        ]
-      });
-      getFees({ ...filters, page: pagination.page });
-    } catch (error) {
-      console.error('Error creating fee:', error);
-    }
+  const generateReceiptNumber = () => {
+    const timestamp = new Date().getTime().toString().slice(-6);
+    const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+    return `REC${timestamp}${random}`;
   };
 
+  const handleSubmit = async (e) => {
+  e.preventDefault();
+  
+  try {
+    // KEEP the receiptNo generation for now
+    const receiptData = {
+      ...formData,
+      receiptNo: generateReceiptNumber() // KEEP THIS LINE
+    };
+    
+    console.log('Submitting fee:', receiptData);
+    
+    const createdFee = await createFee(receiptData);
+    console.log('Created fee response:', createdFee);
+    
+    // Set the generated receipt and show the modal
+    setGeneratedReceipt(createdFee);
+    setShowReceiptModal(true);
+    
+    // Close the fee collection modal and reset form
+    setShowFeeModal(false);
+    setFormData({
+      studentId: '',
+      academicYear: new Date().getFullYear().toString(),
+      semester: 1,
+      amount: 0,
+      paidAmount: 0,
+      dueDate: '',
+      paymentMode: 'cash',
+      transactionId: '',
+      breakdown: [
+        { category: 'Tuition Fee', amount: 0 },
+        { category: 'Hostel Fee', amount: 0 },
+        { category: 'Library Fee', amount: 0 },
+        { category: 'Other Charges', amount: 0 }
+      ]
+    });
+    
+  } catch (error) {
+    console.error('Error creating fee:', error);
+    alert('Failed to create fee: ' + error.message);
+  }
+};
   const columns = [
     {
       header: 'Receipt No',
@@ -132,12 +173,11 @@ const FeeCollection = () => {
       header: 'Status',
       accessor: 'status',
       render: (fee) => (
-        <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
-          fee.status === 'paid' ? 'bg-green-100 text-green-800' :
-          fee.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-          fee.status === 'partial' ? 'bg-blue-100 text-blue-800' :
-          'bg-red-100 text-red-800'
-        }`}>
+        <span className={`px-2 py-1 text-xs font-semibold rounded-full ${fee.status === 'paid' ? 'bg-green-100 text-green-800' :
+            fee.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+              fee.status === 'partial' ? 'bg-blue-100 text-blue-800' :
+                'bg-red-100 text-red-800'
+          }`}>
           {fee.status}
         </span>
       )
@@ -378,6 +418,38 @@ const FeeCollection = () => {
             </button>
           </div>
         </form>
+      </Modal>
+
+      <Modal
+        isOpen={showReceiptModal}
+        onClose={() => setShowReceiptModal(false)}
+        title="Fee Receipt"
+        size="lg"
+      >
+        {generatedReceipt && (
+          <div className="p-4">
+            <h3 className="text-lg font-semibold mb-4">Receipt Generated Successfully!</h3>
+            <p><strong>Receipt No:</strong> {generatedReceipt.receiptNo}</p>
+            <p><strong>Student:</strong> {generatedReceipt.student?.firstName} {generatedReceipt.student?.lastName}</p>
+            <p><strong>Amount:</strong> ₹{generatedReceipt.amount}</p>
+            <p><strong>Status:</strong> {generatedReceipt.status}</p>
+
+            <div className="mt-4 flex space-x-3">
+              <button
+                onClick={() => navigate(`/fees/receipt/${generatedReceipt._id}`)}
+                className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
+              >
+                View Full Receipt
+              </button>
+              <button
+                onClick={() => setShowReceiptModal(false)}
+                className="border border-gray-300 px-4 py-2 rounded-md"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        )}
       </Modal>
     </div>
   );

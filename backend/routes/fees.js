@@ -48,7 +48,11 @@ router.get('/', auth, async (req, res) => {
       totalRecords: fees.totalDocs
     });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error('Detailed error in fees route:', error);
+    res.status(500).json({ 
+      message: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
   }
 });
 

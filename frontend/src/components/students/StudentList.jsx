@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { PlusIcon, EyeIcon, PencilIcon, TrashIcon } from 'lucide-react';
+import { toast } from 'react-hot-toast';
 import useStudentStore from '../../stores/studentStore';
 import Table from '../common/Table';
 import Modal from '../common/Modal';
@@ -29,13 +30,24 @@ const StudentList = () => {
   };
 
   const handleDeleteConfirm = async () => {
-    if (selectedStudent) {
+  if (selectedStudent) {
+    try {
       await deleteStudent(selectedStudent._id);
+      toast.success('Student deleted successfully');
+      
+      // Optional: Refresh the data to ensure consistency with the server
+      // This is good practice in case there are pagination changes
+      getStudents({ ...filters, page: pagination.page });
+      
+    } catch (error) {
+      toast.error('Failed to delete student');
+      console.error('Delete error:', error);
+    } finally {
       setShowDeleteModal(false);
       setSelectedStudent(null);
-      getStudents({ ...filters, page: pagination.page });
     }
-  };
+  }
+};
 
   const columns = [
     {

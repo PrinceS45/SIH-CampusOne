@@ -6,6 +6,9 @@ import About from '../Pages/About'
 import CreateId from '../Pages/CreateId'
 import SignIn from '../Pages/SignIn'
 import SignUp from '../Pages/SignUp'
+import StudentEdit from './components/students/StudentEdit';
+
+// Add this route to your existing routes
 
 function AppRoute() {
   return (
@@ -18,6 +21,7 @@ function AppRoute() {
             <Route path="about" element={<About />} />
             <Route path="SignIn" element={<SignIn />} />
             <Route path="SignUp" element={<SignUp />} />
+            
       </Route>
        </Routes>
     </div>

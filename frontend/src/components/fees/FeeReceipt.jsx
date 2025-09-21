@@ -14,6 +14,9 @@ const FeeReceipt = () => {
       getFee(id);
     }
   }, [id, getFee]);
+    useEffect(() => {
+    console.log('Current fee data in FeeReceipt:', currentFee);
+  }, [currentFee]);
 
   const handlePrint = () => {
     window.print();

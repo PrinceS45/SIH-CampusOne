@@ -95,7 +95,17 @@ const useStudentStore = create((set, get) => ({
     set({ loading: true, error: null });
     try {
       await api.delete(`/students/${id}`);
-      set({ loading: false });
+      
+      // FIX: Update local state after successful deletion
+      set((state) => ({
+        students: state.students.filter(student => student._id !== id),
+        pagination: {
+          ...state.pagination,
+          totalStudents: state.pagination.totalStudents - 1
+        },
+        loading: false
+      }));
+      
     } catch (error) {
       const message = error.response?.data?.message || 'Failed to delete student';
       set({ error: message, loading: false });
