@@ -9,8 +9,8 @@ import Loader from '../common/Loader';
 const StudentDashboard = () => {
   const { user } = useAuthStore();
   const { currentStudent, getStudent } = useStudentStore();
-  const { getStudentFees, loading: feesLoading } = useFeeStore();
-  const { getStudentExams, loading: examsLoading } = useExamStore();
+  const { getMyFees, loading: feesLoading } = useFeeStore();
+  const { getMyExams, loading: examsLoading } = useExamStore();
   
   const [fees, setFees] = useState([]);
   const [exams, setExams] = useState([]);
@@ -20,48 +20,67 @@ const StudentDashboard = () => {
     const fetchStudentData = async () => {
       if (user) {
         try {
-          // Find student by email (assuming email is same as user email)
-          await getStudent({ email: user.email });
-          
-          if (currentStudent) {
-            const studentFees = await getStudentFees(currentStudent.studentId);
-            const studentExams = await getStudentExams(currentStudent.studentId);
+          if (user.role === 'student') {
+            // Use student-specific methods for fees and exams
+            const studentFees = await getMyFees();
+            const studentExams = await getMyExams();
             
             setFees(studentFees);
             setExams(studentExams);
+            
+            // Get student profile data
+            if (user.studentProfile) {
+              // student profile is already populated in user object
+            } else if (user.studentId) {
+              // Fallback: get student by studentId
+              await getStudent(user.studentId);
+            }
           }
         } catch (error) {
           console.error('Error fetching student data:', error);
         } finally {
           setLoading(false);
         }
+      } else {
+        setLoading(false);
       }
     };
 
     fetchStudentData();
-  }, [user, currentStudent]);
+  }, [user, getMyFees, getMyExams, getStudent]);
 
   if (loading) return <Loader />;
 
-  const totalPaid = fees.reduce((sum, fee) => sum + fee.paidAmount, 0);
-  const totalDue = fees.reduce((sum, fee) => sum + fee.balance, 0);
+  // Use user.studentProfile if available, otherwise use currentStudent
+  const studentData = user?.studentProfile || currentStudent;
+  
+  if (!studentData) {
+    return (
+      <div className="text-center py-8">
+        <p className="text-red-600">Student data not found. Please contact administration.</p>
+      </div>
+    );
+  }
+
+  const totalPaid = fees.reduce((sum, fee) => sum + (fee.paidAmount || 0), 0);
+  const totalDue = fees.reduce((sum, fee) => sum + (fee.balance || 0), 0);
   const recentExam = exams[0];
 
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-gray-900">Student Dashboard</h1>
-        <p className="text-gray-600">Welcome back, {currentStudent?.firstName}!</p>
+        <p className="text-gray-600">Welcome back, {studentData.firstName}!</p>
       </div>
 
       {/* Student Info */}
       <div className="bg-white rounded-lg shadow p-6">
         <div className="flex items-center space-x-6">
           <div className="h-16 w-16 rounded-full bg-blue-100 flex items-center justify-center">
-            {currentStudent?.photo ? (
+            {studentData.photo ? (
               <img
-                src={currentStudent.photo}
-                alt={currentStudent.firstName}
+                src={studentData.photo}
+                alt={studentData.firstName}
                 className="h-16 w-16 rounded-full object-cover"
               />
             ) : (
@@ -70,15 +89,15 @@ const StudentDashboard = () => {
           </div>
           <div className="flex-1">
             <h2 className="text-xl font-bold text-gray-900">
-              {currentStudent?.firstName} {currentStudent?.lastName}
+              {studentData.firstName} {studentData.lastName}
             </h2>
-            <p className="text-gray-600">{currentStudent?.studentId}</p>
+            <p className="text-gray-600">{studentData.studentId}</p>
             <div className="flex items-center space-x-4 mt-2 text-sm text-gray-500">
-              <span>{currentStudent?.course}</span>
+              <span>{studentData.course}</span>
               <span>•</span>
-              <span>Semester {currentStudent?.semester}</span>
+              <span>Semester {studentData.semester}</span>
               <span>•</span>
-              <span>{currentStudent?.branch}</span>
+              <span>{studentData.branch}</span>
             </div>
           </div>
         </div>
@@ -161,7 +180,7 @@ const StudentDashboard = () => {
       )}
 
       {/* Hostel Information */}
-      {currentStudent?.hostel && (
+      {studentData.hostel && (
         <div className="bg-white rounded-lg shadow p-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
             <HomeIcon className="h-5 w-5 mr-2" />
@@ -170,15 +189,15 @@ const StudentDashboard = () => {
           <div className="grid grid-cols-2 gap-4">
             <div>
               <p className="text-sm text-gray-600">Hostel</p>
-              <p className="font-medium">{currentStudent.hostel.name}</p>
+              <p className="font-medium">{studentData.hostel.name}</p>
             </div>
             <div>
               <p className="text-sm text-gray-600">Room Number</p>
-              <p className="font-medium">{currentStudent.room?.roomNumber || 'Not allocated'}</p>
+              <p className="font-medium">{studentData.room?.roomNumber || 'Not allocated'}</p>
             </div>
             <div>
               <p className="text-sm text-gray-600">Hostel Type</p>
-              <p className="font-medium capitalize">{currentStudent.hostel.type}</p>
+              <p className="font-medium capitalize">{studentData.hostel.type}</p>
             </div>
             <div>
               <p className="text-sm text-gray-600">Status</p>
@@ -208,6 +227,21 @@ const StudentDashboard = () => {
               </div>
             ))}
           </div>
+        </div>
+      )}
+
+      {/* No Data Messages */}
+      {exams.length === 0 && (
+        <div className="bg-white rounded-lg shadow p-6">
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">Exam Results</h3>
+          <p className="text-gray-500">No exam results available yet.</p>
+        </div>
+      )}
+
+      {fees.length === 0 && (
+        <div className="bg-white rounded-lg shadow p-6">
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">Fee Information</h3>
+          <p className="text-gray-500">No fee records available yet.</p>
         </div>
       )}
     </div>

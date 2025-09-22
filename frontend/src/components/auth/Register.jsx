@@ -9,7 +9,7 @@ const Register = () => {
     email: '',
     password: '',
     confirmPassword: '',
-    role: 'staff',
+    role: 'student',
     department: ''
   });
   const [showPassword, setShowPassword] = useState(false);

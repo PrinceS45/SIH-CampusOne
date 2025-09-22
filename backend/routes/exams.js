@@ -8,6 +8,56 @@ import { LOG_ACTIONS, LOG_MODULES, RESPONSE_MESSAGES } from '../utils/constants.
 
 const router = express.Router();
 
+
+// Add this route for student to get their own exams
+// @route   GET /api/exams/my-exams
+// @desc    Get logged-in student's exam records
+// @access  Private/Student
+router.get('/my-exams', auth, async (req, res) => {
+  try {
+    if (req.user.role !== 'student') {
+      return res.status(403).json({ message: 'Access denied' });
+    }
+    
+    const exams = await Exam.find({ student: req.user.studentProfile })
+      .populate('conductedBy')
+      .sort({ examDate: -1 });
+    
+    res.json(exams);
+  } catch (error) {
+    console.error('Error fetching student exams:', error);
+    res.status(500).json({ message: 'Server error while fetching exams' });
+  }
+});
+
+// Modify the existing student exams route to check authorization
+// @route   GET /api/exams/student/:studentId
+// @desc    Get exam records for a specific student (admin/staff only or student themselves)
+// @access  Private
+router.get('/student/:studentId', auth, async (req, res) => {
+  try {
+    // Students can only access their own data
+    if (req.user.role === 'student' && req.user.studentId !== req.params.studentId) {
+      return res.status(403).json({ message: 'Access denied' });
+    }
+    
+    const student = await Student.findOne({ studentId: req.params.studentId });
+    
+    if (!student) {
+      return res.status(404).json({ message: RESPONSE_MESSAGES.NOT_FOUND });
+    }
+    
+    const exams = await Exam.find({ student: student._id })
+      .populate('conductedBy')
+      .sort({ examDate: -1 });
+    
+    res.json(exams);
+  } catch (error) {
+    console.error('Error fetching student exams:', error);
+    res.status(500).json({ message: 'Server error while fetching student exams' });
+  }
+});
+
 // @route   GET /api/exams
 // @desc    Get all exam records with filtering
 // @access  Private
@@ -60,27 +110,6 @@ router.get('/', auth, async (req, res) => {
   }
 });
 
-// @route   GET /api/exams/student/:studentId
-// @desc    Get exam records for a specific student
-// @access  Private
-router.get('/student/:studentId', auth, async (req, res) => {
-  try {
-    const student = await Student.findOne({ studentId: req.params.studentId });
-    
-    if (!student) {
-      return res.status(404).json({ message: RESPONSE_MESSAGES.NOT_FOUND });
-    }
-    
-    const exams = await Exam.find({ student: student._id })
-      .populate('conductedBy')
-      .sort({ examDate: -1 });
-    
-    res.json(exams);
-  } catch (error) {
-    console.error('Error fetching student exams:', error);
-    res.status(500).json({ message: 'Server error while fetching student exams' });
-  }
-});
 
 // @route   GET /api/exams/:id
 // @desc    Get exam record by ID

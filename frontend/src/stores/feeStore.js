@@ -67,6 +67,18 @@ getFees: async (params = {}) => {
     }
   }
 },
+getMyFees: async () => {
+  set({ loading: true, error: null });
+  try {
+    const response = await api.get('/fees/my-fees');
+    set({ fees: response.data || [], loading: false });
+    return response.data;
+  } catch (error) {
+    const message = error.response?.data?.message || 'Failed to fetch fees';
+    set({ error: message, loading: false });
+    throw new Error(message);
+  }
+},
 
   getStudentFees: async (studentId) => {
     set({ loading: true, error: null });

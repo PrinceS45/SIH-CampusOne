@@ -8,6 +8,53 @@ import { LOG_ACTIONS, LOG_MODULES, RESPONSE_MESSAGES } from '../utils/constants.
 
 const router = express.Router();
 
+
+// Add this route for student to get their own fees
+// @route   GET /api/fees/my-fees
+// @desc    Get logged-in student's fee records
+// @access  Private/Student
+router.get('/my-fees', auth, async (req, res) => {
+  try {
+    if (req.user.role !== 'student') {
+      return res.status(403).json({ message: 'Access denied' });
+    }
+    
+    const fees = await Fee.find({ student: req.user.studentProfile })
+      .populate('collectedBy')
+      .sort({ paymentDate: -1 });
+    
+    res.json(fees);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// Modify existing student fees route
+// @route   GET /api/fees/student/:studentId
+// @desc    Get fee records for a specific student (admin/staff only or student themselves)
+// @access  Private
+router.get('/student/:studentId', auth, async (req, res) => {
+  try {
+    // Students can only access their own data
+    if (req.user.role === 'student' && req.user.studentId !== req.params.studentId) {
+      return res.status(403).json({ message: 'Access denied' });
+    }
+    
+    const student = await Student.findOne({ studentId: req.params.studentId });
+    
+    if (!student) {
+      return res.status(404).json({ message: RESPONSE_MESSAGES.NOT_FOUND });
+    }
+    
+    const fees = await Fee.find({ student: student._id })
+      .populate('collectedBy')
+      .sort({ paymentDate: -1 });
+    
+    res.json(fees);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
 // @route   GET /api/fees
 // @desc    Get all fee records with filtering
 // @access  Private
@@ -59,23 +106,6 @@ router.get('/', auth, async (req, res) => {
 // @route   GET /api/fees/student/:studentId
 // @desc    Get fee records for a specific student
 // @access  Private
-router.get('/student/:studentId', auth, async (req, res) => {
-  try {
-    const student = await Student.findOne({ studentId: req.params.studentId });
-    
-    if (!student) {
-      return res.status(404).json({ message: RESPONSE_MESSAGES.NOT_FOUND });
-    }
-    
-    const fees = await Fee.find({ student: student._id })
-      .populate('collectedBy')
-      .sort({ paymentDate: -1 });
-    
-    res.json(fees);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-});
 
 // @route   GET /api/fees/:id
 // @desc    Get fee record by ID

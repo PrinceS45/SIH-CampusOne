@@ -46,7 +46,7 @@ const examSchema = new mongoose.Schema({
   grade: {
     type: String,
     enum: ['A+', 'A', 'B+', 'B', 'C+', 'C', 'D', 'F', 'I'],
-    required: true
+   // required: true
   },
   examDate: {
     type: Date,
@@ -59,7 +59,7 @@ const examSchema = new mongoose.Schema({
   status: {
     type: String,
     enum: ['pass', 'fail', 'absent', 'malpractice'],
-    required: true
+   // required: true
   },
   conductedBy: {
     type: mongoose.Schema.Types.ObjectId,

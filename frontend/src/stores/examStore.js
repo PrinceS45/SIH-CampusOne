@@ -26,12 +26,12 @@ const useExamStore = create((set, get) => ({
     try {
       const response = await api.get('/exams', { params });
       set({ 
-        exams: response.data.exams,
+        exams: response.data.exams || [],
         pagination: {
-          page: response.data.currentPage,
+          page: response.data.currentPage || 1,
           limit: params.limit || get().pagination.limit,
-          totalPages: response.data.totalPages,
-          totalRecords: response.data.totalRecords
+          totalPages: response.data.totalPages || 1,
+          totalRecords: response.data.totalRecords || 0
         },
         loading: false 
       });
@@ -46,7 +46,7 @@ const useExamStore = create((set, get) => ({
     set({ loading: true, error: null });
     try {
       const response = await api.get(`/exams/student/${studentId}`);
-      set({ exams: response.data, loading: false });
+      set({ exams: response.data || [], loading: false });
       return response.data;
     } catch (error) {
       const message = error.response?.data?.message || 'Failed to fetch student exams';
@@ -70,14 +70,28 @@ const useExamStore = create((set, get) => ({
       throw new Error(message);
     }
   },
-
+   getMyExams: async () => {
+  set({ loading: true, error: null });
+  try {
+    const response = await api.get('/exams/my-exams');
+    set({ exams: response.data || [], loading: false });
+    return response.data;
+  } catch (error) {
+    const message = error.response?.data?.message || 'Failed to fetch exams';
+    set({ error: message, loading: false });
+    throw new Error(message);
+  }
+},
   createExam: async (examData) => {
     set({ loading: true, error: null });
     try {
+      console.log('Creating exam with data:', examData); // Debug log
+      
       const response = await api.post('/exams', examData);
       set({ loading: false });
       return response.data;
     } catch (error) {
+      console.error('Exam creation error:', error.response?.data || error);
       const message = error.response?.data?.message || 'Failed to create exam';
       set({ error: message, loading: false });
       throw new Error(message);
@@ -114,7 +128,7 @@ const useExamStore = create((set, get) => ({
     try {
       const response = await api.get('/exams/stats/performance', { params });
       set({ 
-        performanceStats: response.data, 
+        performanceStats: response.data || [], 
         loading: false 
       });
       return response.data;

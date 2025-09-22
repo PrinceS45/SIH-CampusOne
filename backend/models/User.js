@@ -34,6 +34,17 @@ const userSchema = new mongoose.Schema({
   lastLogin: {
     type: Date,
     default: Date.now
+  },
+  // New field to link student record
+  studentId: {
+    type: String,
+    unique: true,
+    sparse: true // Allows null values while maintaining uniqueness for non-null values
+  },
+  // Reference to Student model
+  studentProfile: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Student'
   }
 }, {
   timestamps: true
@@ -64,6 +75,11 @@ userSchema.methods.toJSON = function() {
   const user = this.toObject();
   delete user.password;
   return user;
+};
+
+// Static method to find by studentId
+userSchema.statics.findByStudentId = function(studentId) {
+  return this.findOne({ studentId });
 };
 
 const User = mongoose.model('User', userSchema);

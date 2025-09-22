@@ -36,12 +36,34 @@ app.use(cors({
   credentials: true
 }));
 
-// Rate limiting
+// Rate limiting - FIXED: More generous limits for development
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 1000 // Increased limit for development
+  max: 100, // Reasonable limit for development
+  message: {
+    error: 'Too many requests from this IP, please try again later.',
+    retryAfter: '15 minutes'
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
 });
+
+// Apply rate limiting to all routes except health check
 app.use(limiter);
+
+// More generous rate limiting specifically for auth routes
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 10, // Allow 10 login attempts per 15 minutes
+  message: {
+    error: 'Too many login attempts, please try again later.',
+    retryAfter: '15 minutes'
+  },
+  skipSuccessfulRequests: true, // Don't count successful logins
+});
+
+// Apply specific rate limiting to auth routes
+app.use('/api/auth/login', authLimiter);
 
 // Serve static files from uploads directory
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
@@ -62,7 +84,7 @@ app.use('/api/exams', examRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/logs', logRoutes);
 
-// Health check endpoint
+// Health check endpoint (no rate limiting)
 app.get('/health', (req, res) => {
   res.status(200).json({ 
     status: 'OK', 
