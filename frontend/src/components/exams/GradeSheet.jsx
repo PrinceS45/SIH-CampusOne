@@ -7,16 +7,26 @@ import Loader from '../common/Loader';
 
 const GradeSheet = () => {
   const { studentId } = useParams();
-  const { currentStudent, getStudent } = useStudentStore();
-  const { exams, getStudentExams, loading } = useExamStore();
+  const { currentStudent, getStudent, loading: studentLoading } = useStudentStore();
+  const { exams, getStudentExams, loading: examsLoading } = useExamStore();
   const [currentDate] = useState(new Date().toLocaleDateString());
   const [selectedSemester, setSelectedSemester] = useState('');
+  const [error, setError] = useState('');
 
   useEffect(() => {
-    if (studentId) {
-      getStudent(studentId);
-      getStudentExams(studentId);
-    }
+    const fetchData = async () => {
+      try {
+        if (studentId) {
+          await getStudent(studentId);
+          await getStudentExams(studentId);
+        }
+      } catch (err) {
+        setError('Failed to load student data');
+        console.error('Error fetching student data:', err);
+      }
+    };
+    
+    fetchData();
   }, [studentId, getStudent, getStudentExams]);
 
   const handlePrint = () => {
@@ -29,8 +39,9 @@ const GradeSheet = () => {
 
   const semesterOptions = [...new Set(exams.map(exam => exam.semester))].sort();
 
-  if (loading) return <Loader />;
-  if (!currentStudent) return <div>Student not found</div>;
+  if (studentLoading || examsLoading) return <Loader />;
+  if (error) return <div className="text-center py-8 text-red-600">{error}</div>;
+  if (!currentStudent) return <div className="text-center py-8">Student not found</div>;
 
   const calculateSemesterGPA = (semesterExams) => {
     if (semesterExams.length === 0) return 0;

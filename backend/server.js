@@ -32,7 +32,7 @@ const __dirname = path.dirname(__filename);
 app.use(helmet());
 app.use(mongoSanitize());
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+  origin: ['http://localhost:5173', 'https://sih-campus-one-three.vercel.app/'] , 
   credentials: true
 }));
 

@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import mongoosePaginate from 'mongoose-paginate-v2';
 
 const examSchema = new mongoose.Schema({
   student: {
@@ -13,7 +14,8 @@ const examSchema = new mongoose.Schema({
   },
   subject: {
     type: String,
-    required: true
+    required: true,
+    trim: true
   },
   course: {
     type: String,
@@ -21,17 +23,25 @@ const examSchema = new mongoose.Schema({
   },
   semester: {
     type: Number,
-    required: true
+    required: true,
+    min: 1,
+    max: 8
   },
   maximumMarks: {
     type: Number,
     required: true,
-    min: 0
+    min: 1
   },
   marksObtained: {
     type: Number,
     required: true,
-    min: 0
+    min: 0,
+    validate: {
+      validator: function(value) {
+        return value <= this.maximumMarks;
+      },
+      message: 'Marks obtained cannot exceed maximum marks'
+    }
   },
   grade: {
     type: String,
@@ -58,7 +68,8 @@ const examSchema = new mongoose.Schema({
   },
   remarks: {
     type: String,
-    default: ''
+    default: '',
+    trim: true
   }
 }, {
   timestamps: true
@@ -66,6 +77,13 @@ const examSchema = new mongoose.Schema({
 
 // Calculate grade based on marks
 examSchema.pre('save', function(next) {
+  // Handle absent or malpractice cases
+  if (this.status === 'absent' || this.status === 'malpractice') {
+    this.grade = 'I';
+    this.marksObtained = 0;
+    return next();
+  }
+  
   const percentage = (this.marksObtained / this.maximumMarks) * 100;
   
   if (percentage >= 90) this.grade = 'A+';
@@ -86,6 +104,10 @@ examSchema.pre('save', function(next) {
 examSchema.index({ student: 1 });
 examSchema.index({ subject: 1 });
 examSchema.index({ course: 1, semester: 1 });
+examSchema.index({ examDate: -1 });
+
+// Add pagination plugin
+examSchema.plugin(mongoosePaginate);
 
 const Exam = mongoose.model('Exam', examSchema);
 

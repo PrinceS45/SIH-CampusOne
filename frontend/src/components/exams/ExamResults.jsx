@@ -7,26 +7,52 @@ import Loader from '../common/Loader';
 const ExamResults = () => {
   const { exams, loading, pagination, filters, getExams, setFilters, getPerformanceStats } = useExamStore();
   const [performanceStats, setPerformanceStats] = useState([]);
+  const [localFilters, setLocalFilters] = useState(filters);
 
   useEffect(() => {
     getExams({ ...filters, page: 1 });
     fetchPerformanceStats();
-  }, [filters]);
+  }, [filters, getExams]);
 
   const fetchPerformanceStats = async () => {
-    const stats = await getPerformanceStats({
-      course: filters.course,
-      semester: filters.semester
-    });
-    setPerformanceStats(stats);
+    try {
+      const stats = await getPerformanceStats({
+        course: filters.course,
+        semester: filters.semester
+      });
+      setPerformanceStats(stats);
+    } catch (error) {
+      console.error('Error fetching performance stats:', error);
+    }
   };
 
   const handlePageChange = (page) => {
     getExams({ ...filters, page });
   };
 
-  const handleFilterChange = (newFilters) => {
+  const handleFilterChange = (key, value) => {
+    const newFilters = { ...filters, [key]: value };
     setFilters(newFilters);
+  };
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setLocalFilters(prev => ({ ...prev, [name]: value }));
+  };
+
+  const applyFilters = () => {
+    setFilters(localFilters);
+  };
+
+  const clearFilters = () => {
+    const emptyFilters = {
+      studentId: '',
+      examType: '',
+      course: '',
+      semester: ''
+    };
+    setLocalFilters(emptyFilters);
+    setFilters(emptyFilters);
   };
 
   const columns = [
@@ -104,10 +130,24 @@ const ExamResults = () => {
             <FilterIcon className="h-5 w-5 mr-2" />
             Filter Results
           </h3>
-          <button className="bg-blue-600 text-white px-4 py-2 rounded-md flex items-center space-x-2 hover:bg-blue-700">
-            <DownloadIcon className="h-4 w-4" />
-            <span>Export Results</span>
-          </button>
+          <div className="flex space-x-2">
+            <button 
+              onClick={applyFilters}
+              className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
+            >
+              Apply Filters
+            </button>
+            <button 
+              onClick={clearFilters}
+              className="bg-gray-300 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-400"
+            >
+              Clear
+            </button>
+            <button className="bg-green-600 text-white px-4 py-2 rounded-md flex items-center space-x-2 hover:bg-green-700">
+              <DownloadIcon className="h-4 w-4" />
+              <span>Export Results</span>
+            </button>
+          </div>
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -115,8 +155,9 @@ const ExamResults = () => {
             <label className="block text-sm font-medium text-gray-700">Student ID</label>
             <input
               type="text"
-              value={filters.studentId || ''}
-              onChange={(e) => handleFilterChange({ studentId: e.target.value })}
+              name="studentId"
+              value={localFilters.studentId || ''}
+              onChange={handleInputChange}
               className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
               placeholder="Enter student ID"
             />
@@ -124,8 +165,9 @@ const ExamResults = () => {
           <div>
             <label className="block text-sm font-medium text-gray-700">Exam Type</label>
             <select
-              value={filters.examType || ''}
-              onChange={(e) => handleFilterChange({ examType: e.target.value })}
+              name="examType"
+              value={localFilters.examType || ''}
+              onChange={handleInputChange}
               className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
             >
               <option value="">All Types</option>
@@ -138,8 +180,9 @@ const ExamResults = () => {
           <div>
             <label className="block text-sm font-medium text-gray-700">Course</label>
             <select
-              value={filters.course || ''}
-              onChange={(e) => handleFilterChange({ course: e.target.value })}
+              name="course"
+              value={localFilters.course || ''}
+              onChange={handleInputChange}
               className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
             >
               <option value="">All Courses</option>
@@ -152,8 +195,9 @@ const ExamResults = () => {
           <div>
             <label className="block text-sm font-medium text-gray-700">Semester</label>
             <select
-              value={filters.semester || ''}
-              onChange={(e) => handleFilterChange({ semester: e.target.value })}
+              name="semester"
+              value={localFilters.semester || ''}
+              onChange={handleInputChange}
               className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
             >
               <option value="">All Semesters</option>

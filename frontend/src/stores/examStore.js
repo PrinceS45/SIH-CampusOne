@@ -46,7 +46,7 @@ const useExamStore = create((set, get) => ({
     set({ loading: true, error: null });
     try {
       const response = await api.get(`/exams/student/${studentId}`);
-      set({ loading: false });
+      set({ exams: response.data, loading: false });
       return response.data;
     } catch (error) {
       const message = error.response?.data?.message || 'Failed to fetch student exams';

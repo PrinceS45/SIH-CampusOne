@@ -13,27 +13,19 @@ import HostelAllocation from './components/hostels/HostelAllocation';
 import RoomStatus from './components/hostels/RoomStatus';
 import ExamForm from './components/exams/ExamForm';
 import ExamResults from './components/exams/ExamResults';
+import GradeSheet from './components/exams/GradeSheet';
 import DashboardReports from './components/reports/DashboardReports';
 import useAuthStore from "./stores/authStore.js"
 import StudentEdit from './components/students/StudentEdit.jsx';
 import FeeReceipt from './components/fees/FeeReceipt';
 
 function App() {
-  const { isAuthenticated, user } = useAuthStore();
+  const { isAuthenticated, user, initializeAuth } = useAuthStore();
 
   // Check if user is authenticated on app load
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    const userData = localStorage.getItem('user');
-    
-    if (token && userData) {
-      useAuthStore.setState({ 
-        isAuthenticated: true, 
-        token, 
-        user: JSON.parse(userData) 
-      });
-    }
-  }, []);
+    initializeAuth();
+  }, [initializeAuth]);
 
   const ProtectedRoute = ({ children, allowedRoles = [] }) => {
     if (!isAuthenticated) {
@@ -90,8 +82,15 @@ function App() {
             </ProtectedRoute>
           } 
         />
-        <Route path="/students/:id/edit" element={<StudentEdit />} />
-
+        
+        <Route 
+          path="/students/:id/edit" 
+          element={
+            <ProtectedRoute allowedRoles={['admin', 'staff']}>
+              <StudentEdit />
+            </ProtectedRoute>
+          } 
+        />
         
         <Route 
           path="/fees" 
@@ -111,8 +110,14 @@ function App() {
           } 
         />
         
-<Route path="/fees/receipt/:id" element={<FeeReceipt />} />
-
+        <Route 
+          path="/fees/receipt/:id" 
+          element={
+            <ProtectedRoute>
+              <FeeReceipt />
+            </ProtectedRoute>
+          } 
+        />
         
         <Route 
           path="/hostels" 
@@ -155,6 +160,15 @@ function App() {
           element={
             <ProtectedRoute>
               <ExamResults />
+            </ProtectedRoute>
+          } 
+        />
+        
+        <Route 
+          path="/exams/gradesheet/:studentId" 
+          element={
+            <ProtectedRoute>
+              <GradeSheet />
             </ProtectedRoute>
           } 
         />

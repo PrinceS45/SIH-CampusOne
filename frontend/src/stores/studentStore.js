@@ -23,14 +23,16 @@ const useStudentStore = create((set, get) => ({
   getStudents: async (params = {}) => {
     set({ loading: true, error: null });
     try {
-      const response = await api.get('/students', { params });
+      const response = await api.get('/students', { 
+        params: { ...get().filters, ...params } 
+      });
       set({ 
-        students: response.data.students,
+        students: response.data.students || [],
         pagination: {
-          page: response.data.currentPage,
+          page: response.data.currentPage || 1,
           limit: params.limit || get().pagination.limit,
-          totalPages: response.data.totalPages,
-          totalStudents: response.data.totalStudents
+          totalPages: response.data.totalPages || 1,
+          totalStudents: response.data.totalStudents || 0
         },
         loading: false 
       });
@@ -53,6 +55,8 @@ const useStudentStore = create((set, get) => ({
     } catch (error) {
       const message = error.response?.data?.message || 'Failed to fetch student';
       set({ error: message, loading: false });
+      // Clear current student on error
+      set({ currentStudent: null, loading: false });
       throw new Error(message);
     }
   },
@@ -82,7 +86,13 @@ const useStudentStore = create((set, get) => ({
           'Content-Type': 'multipart/form-data'
         }
       });
-      set({ loading: false });
+      
+      // Update current student if it's the one being updated
+      set((state) => ({
+        currentStudent: state.currentStudent?._id === id ? response.data : state.currentStudent,
+        loading: false
+      }));
+      
       return response.data;
     } catch (error) {
       const message = error.response?.data?.message || 'Failed to update student';
@@ -96,12 +106,12 @@ const useStudentStore = create((set, get) => ({
     try {
       await api.delete(`/students/${id}`);
       
-      // FIX: Update local state after successful deletion
+      // Update local state after successful deletion
       set((state) => ({
         students: state.students.filter(student => student._id !== id),
         pagination: {
           ...state.pagination,
-          totalStudents: state.pagination.totalStudents - 1
+          totalStudents: Math.max(0, state.pagination.totalStudents - 1)
         },
         loading: false
       }));
@@ -126,7 +136,15 @@ const useStudentStore = create((set, get) => ({
           'Content-Type': 'multipart/form-data'
         }
       });
-      set({ loading: false });
+      
+      // Update current student documents if it's the same student
+      set((state) => ({
+        currentStudent: state.currentStudent?._id === id 
+          ? { ...state.currentStudent, documents: response.data.documents }
+          : state.currentStudent,
+        loading: false
+      }));
+      
       return response.data;
     } catch (error) {
       const message = error.response?.data?.message || 'Failed to upload documents';
@@ -135,8 +153,28 @@ const useStudentStore = create((set, get) => ({
     }
   },
 
-  setFilters: (filters) => set({ filters: { ...get().filters, ...filters } }),
+  setFilters: (filters) => {
+    set({ filters: { ...get().filters, ...filters } });
+    // Automatically refetch students when filters change
+    get().getStudents({ page: 1 });
+  },
+  
+  clearFilters: () => {
+    set({ 
+      filters: {
+        search: '',
+        course: '',
+        branch: '',
+        semester: '',
+        status: ''
+      }
+    });
+    get().getStudents({ page: 1 });
+  },
+  
   clearError: () => set({ error: null }),
+  
+  clearCurrentStudent: () => set({ currentStudent: null }),
 }));
 
 export default useStudentStore;

@@ -10,6 +10,7 @@ const useAuthStore = create(
       isAuthenticated: false,
       loading: false,
       error: null,
+      
 
       login: async (credentials) => {
         set({ loading: true, error: null });
@@ -34,7 +35,19 @@ const useAuthStore = create(
           throw new Error(message);
         }
       },
-
+       
+       initializeAuth: () => {
+    const token = localStorage.getItem('token');
+    const userData = localStorage.getItem('user');
+    
+    if (token && userData) {
+      set({ 
+        isAuthenticated: true, 
+        token, 
+        user: JSON.parse(userData) 
+      });
+    }
+  },
       register: async (userData) => {
         set({ loading: true, error: null });
         try {

@@ -29,6 +29,8 @@ router.get('/', auth, async (req, res) => {
       const student = await Student.findOne({ studentId });
       if (student) {
         query.student = student._id;
+      } else {
+        return res.status(404).json({ message: 'Student not found' });
       }
     }
     
@@ -53,7 +55,8 @@ router.get('/', auth, async (req, res) => {
       totalRecords: exams.totalDocs
     });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error('Error fetching exams:', error);
+    res.status(500).json({ message: 'Server error while fetching exams' });
   }
 });
 
@@ -74,7 +77,8 @@ router.get('/student/:studentId', auth, async (req, res) => {
     
     res.json(exams);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error('Error fetching student exams:', error);
+    res.status(500).json({ message: 'Server error while fetching student exams' });
   }
 });
 
@@ -93,7 +97,8 @@ router.get('/:id', auth, async (req, res) => {
     
     res.json(exam);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error('Error fetching exam:', error);
+    res.status(500).json({ message: 'Server error while fetching exam' });
   }
 });
 
@@ -104,11 +109,16 @@ router.post('/', auth, authorize('admin', 'staff'), async (req, res) => {
   try {
     const { studentId, ...examData } = req.body;
     
+    // Validate required fields
+    if (!studentId || !examData.subject || !examData.maximumMarks || !examData.marksObtained) {
+      return res.status(400).json({ message: 'Missing required fields' });
+    }
+    
     // Find student by studentId
     const student = await Student.findOne({ studentId });
     
     if (!student) {
-      return res.status(404).json({ message: RESPONSE_MESSAGES.NOT_FOUND });
+      return res.status(404).json({ message: 'Student not found' });
     }
     
     const exam = new Exam({
@@ -148,7 +158,11 @@ router.post('/', auth, authorize('admin', 'staff'), async (req, res) => {
     
     res.status(201).json(populatedExam);
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    console.error('Error creating exam:', error);
+    if (error.name === 'ValidationError') {
+      return res.status(400).json({ message: error.message });
+    }
+    res.status(500).json({ message: 'Server error while creating exam' });
   }
 });
 
@@ -182,7 +196,11 @@ router.put('/:id', auth, authorize('admin', 'staff'), async (req, res) => {
     
     res.json(updatedExam);
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    console.error('Error updating exam:', error);
+    if (error.name === 'ValidationError') {
+      return res.status(400).json({ message: error.message });
+    }
+    res.status(500).json({ message: 'Server error while updating exam' });
   }
 });
 
@@ -211,7 +229,8 @@ router.delete('/:id', auth, authorize('admin'), async (req, res) => {
     
     res.json({ message: RESPONSE_MESSAGES.DELETED });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error('Error deleting exam:', error);
+    res.status(500).json({ message: 'Server error while deleting exam' });
   }
 });
 
@@ -274,7 +293,8 @@ router.get('/stats/performance', auth, authorize('admin'), async (req, res) => {
     
     res.json(performanceStats);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error('Error fetching performance stats:', error);
+    res.status(500).json({ message: 'Server error while fetching performance stats' });
   }
 });
 
