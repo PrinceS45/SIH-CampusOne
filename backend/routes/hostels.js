@@ -1,6 +1,7 @@
 import express from 'express';
 import { auth, authorize } from '../middleware/auth.js';
-import { Hostel, Room } from '../models/Hostel.js';
+import { Hostel } from '../models/Hostel.js';
+import Room from '../models/Room.js';
 import Student from '../models/Student.js';
 import { createLogEntry } from '../middleware/logging.js';
 import { LOG_ACTIONS, LOG_MODULES, RESPONSE_MESSAGES } from '../utils/constants.js';
@@ -141,6 +142,7 @@ router.delete('/:id', auth, authorize('admin'), async (req, res) => {
 // @route   GET /api/hostels/:id/rooms
 // @desc    Get all rooms in a hostel
 // @access  Private
+
 router.get('/:id/rooms', auth, async (req, res) => {
   try {
     const { status, floor, available } = req.query;
@@ -149,14 +151,17 @@ router.get('/:id/rooms', auth, async (req, res) => {
     
     if (status) query.status = status;
     if (floor) query.floor = parseInt(floor);
-    if (available === 'true') {
-      query.status = 'available';
-      query.currentOccupancy = { $lt: '$capacity' };
-    }
     
-    const rooms = await Room.find(query)
+    let rooms = await Room.find(query)
       .populate('hostel')
       .sort({ floor: 1, roomNumber: 1 });
+    
+    // Filter available rooms on the server side if needed
+    if (available === 'true') {
+      rooms = rooms.filter(room => 
+        room.status === 'available' && room.currentOccupancy < room.capacity
+      );
+    }
     
     res.json(rooms);
   } catch (error) {

@@ -2,12 +2,14 @@ import { useState, useEffect } from 'react';
 import { BuildingIcon, UsersIcon, HomeIcon } from 'lucide-react';
 import useHostelStore from '../../stores/hostelStore';
 import Loader from '../common/Loader';
+import { useNavigate } from 'react-router-dom'; // Add this import
 
 const RoomStatus = () => {
   const { hostels, rooms, loading, getHostels, getRooms } = useHostelStore();
   const [selectedHostel, setSelectedHostel] = useState('');
   const [selectedFloor, setSelectedFloor] = useState('');
   const [roomStatusFilter, setRoomStatusFilter] = useState('');
+  const navigate = useNavigate(); // Add this
 
   useEffect(() => {
     getHostels();
@@ -15,12 +17,31 @@ const RoomStatus = () => {
 
   useEffect(() => {
     if (selectedHostel) {
-      getRooms(selectedHostel, { status: roomStatusFilter, floor: selectedFloor });
+      getRooms(selectedHostel);
     }
-  }, [selectedHostel, selectedFloor, roomStatusFilter]);
+  }, [selectedHostel]);
+
+  // Filter rooms based on selected filters
+  const filteredRooms = rooms.filter(room => {
+    if (selectedFloor && room.floor !== parseInt(selectedFloor)) return false;
+    if (roomStatusFilter && room.status !== roomStatusFilter) return false;
+    return true;
+  });
 
   const floors = [...new Set(rooms.map(room => room.floor))].sort();
   const statusOptions = ['available', 'occupied', 'maintenance', 'reserved'];
+
+  // Add this function to handle allocation
+  const handleAllocateRoom = (room) => {
+    // Navigate to allocation page with room and hostel info
+    navigate('/hostels/allocate', { 
+      state: { 
+        hostelId: selectedHostel,
+        roomId: room._id,
+        preSelectedRoom: room.roomNumber
+      }
+    });
+  };
 
   if (loading && !hostels.length) return <Loader />;
 
@@ -92,14 +113,14 @@ const RoomStatus = () => {
               {hostels.find(h => h._id === selectedHostel)?.name} - Room Status
             </h3>
             <div className="text-sm text-gray-600">
-              {rooms.length} rooms found
+              {filteredRooms.length} rooms found
             </div>
           </div>
 
           {floors.length > 0 ? (
             <div className="space-y-8">
               {floors.map((floor) => {
-                const floorRooms = rooms.filter(room => room.floor === floor);
+                const floorRooms = filteredRooms.filter(room => room.floor === floor);
                 if (floorRooms.length === 0) return null;
 
                 return (
@@ -164,7 +185,11 @@ const RoomStatus = () => {
 
                           {room.status === 'available' && (
                             <div className="mt-3 pt-2 border-t border-gray-200">
-                              <button className="w-full bg-green-600 text-white py-1 px-2 rounded text-sm hover:bg-green-700">
+                              {/* FIXED: Added onClick handler */}
+                              <button 
+                                onClick={() => handleAllocateRoom(room)}
+                                className="w-full bg-green-600 text-white py-1 px-2 rounded text-sm hover:bg-green-700 transition-colors"
+                              >
                                 Allocate Room
                               </button>
                             </div>

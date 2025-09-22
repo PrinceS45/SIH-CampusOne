@@ -78,20 +78,31 @@ const useHostelStore = create((set, get) => ({
     }
   },
 
-  getRooms: async (hostelId, params = {}) => {
-    set({ loading: true, error: null });
-    try {
-      const response = await api.get(`/hostels/${hostelId}/rooms`, { params });
-      set({ 
-        rooms: response.data, 
-        loading: false 
-      });
-    } catch (error) {
-      const message = error.response?.data?.message || 'Failed to fetch rooms';
-      set({ error: message, loading: false });
-      throw new Error(message);
-    }
-  },
+getRooms: async (hostelId, params = {}) => {
+  set({ loading: true, error: null });
+  try {
+    console.log('🔄 Fetching rooms for hostel:', hostelId);
+    console.log('📋 Request params:', params);
+    
+    const response = await api.get(`/hostels/${hostelId}/rooms`, { params });
+    
+    console.log('✅ API Response:', response.data);
+    console.log('📊 Number of rooms received:', response.data.length);
+    
+    set({ 
+      rooms: response.data, 
+      loading: false 
+    });
+    return response.data;
+  } catch (error) {
+    console.error('❌ Error fetching rooms:', error);
+    console.error('📝 Error details:', error.response?.data);
+    
+    const message = error.response?.data?.message || 'Failed to fetch rooms';
+    set({ error: message, loading: false });
+    throw new Error(message);
+  }
+},
 
   createRoom: async (hostelId, roomData) => {
     set({ loading: true, error: null });
@@ -131,31 +142,29 @@ const useHostelStore = create((set, get) => ({
     }
   },
 
-  allocateRoom: async (allocationData) => {
-    set({ loading: true, error: null });
-    try {
-      const response = await api.post('/hostels/allocate', allocationData);
-      set({ loading: false });
-      return response.data;
-    } catch (error) {
-      const message = error.response?.data?.message || 'Failed to allocate room';
-      set({ error: message, loading: false });
-      throw new Error(message);
-    }
-  },
+ // In your hostelStore.js
+allocateRoom: async (studentId, roomId) => {
+  try {
+    const response = await api.post('/hostels/allocate', {
+      studentId: studentId,  // Just the string, not an object
+      roomId: roomId         // Just the string, not an object
+    });
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+},
 
-  deallocateRoom: async (studentId) => {
-    set({ loading: true, error: null });
-    try {
-      const response = await api.post('/hostels/deallocate', { studentId });
-      set({ loading: false });
-      return response.data;
-    } catch (error) {
-      const message = error.response?.data?.message || 'Failed to deallocate room';
-      set({ error: message, loading: false });
-      throw new Error(message);
-    }
-  },
+deallocateRoom: async (studentId) => {
+  try {
+    const response = await api.post('/hostels/deallocate', {
+      studentId: studentId  // Just the string, not an object
+    });
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+} , 
 
   getOccupancyStats: async () => {
     set({ loading: true, error: null });

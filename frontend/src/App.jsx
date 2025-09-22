@@ -1,6 +1,5 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { useEffect } from 'react';
-// import Layout from './components/layout/Layout.jsx';
 import Layout from "./components/layouts/Layout.jsx"
 import Login from './components/auth/Login';
 import AdminDashboard from './components/dashboard/AdminDashboard';
@@ -11,13 +10,13 @@ import FeeCollection from './components/fees/FeeCollection';
 import FeeReport from './components/fees/FeeReport';
 import HostelManagement from './components/hostels/HostelManagement';
 import HostelAllocation from './components/hostels/HostelAllocation';
+import RoomStatus from './components/hostels/RoomStatus';
 import ExamForm from './components/exams/ExamForm';
 import ExamResults from './components/exams/ExamResults';
 import DashboardReports from './components/reports/DashboardReports';
 import useAuthStore from "./stores/authStore.js"
 import StudentEdit from './components/students/StudentEdit.jsx';
 import FeeReceipt from './components/fees/FeeReceipt';
-
 
 function App() {
   const { isAuthenticated, user } = useAuthStore();
@@ -129,6 +128,15 @@ function App() {
           element={
             <ProtectedRoute allowedRoles={['admin', 'staff']}>
               <HostelAllocation />
+            </ProtectedRoute>
+          } 
+        />
+        
+        <Route 
+          path="/hostels/rooms" 
+          element={
+            <ProtectedRoute allowedRoles={['admin', 'staff']}>
+              <RoomStatus />
             </ProtectedRoute>
           } 
         />

@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react';
-import { UserIcon, BuildingIcon, HomeIcon } from 'lucide-react';
+import { UserIcon, BuildingIcon, HomeIcon, AlertCircleIcon } from 'lucide-react';
 import useHostelStore from '../../stores/hostelStore';
 import useStudentStore from '../../stores/studentStore';
 import Modal from '../common/Modal';
 import Loader from '../common/Loader';
+import { useLocation } from 'react-router-dom';
 
 const HostelAllocation = () => {
-  const { hostels, rooms, loading, getRooms, allocateRoom, deallocateRoom, getOccupancyStats } = useHostelStore();
+  const { hostels, rooms, loading, error, getRooms, allocateRoom, deallocateRoom, getOccupancyStats } = useHostelStore();
   const { students, getStudents } = useStudentStore();
   const [selectedHostel, setSelectedHostel] = useState('');
   const [selectedStudent, setSelectedStudent] = useState('');
@@ -14,17 +15,44 @@ const HostelAllocation = () => {
   const [showAllocationModal, setShowAllocationModal] = useState(false);
   const [showDeallocationModal, setShowDeallocationModal] = useState(false);
   const [currentAction, setCurrentAction] = useState('allocate');
+  const [roomLoading, setRoomLoading] = useState(false);
+  
+  const location = useLocation();
+  const hostelIdFromNav = location.state?.hostelId;
 
   useEffect(() => {
     getStudents({ limit: 1000 });
-    getHostels();
     getOccupancyStats();
-  }, []);
+    
+    // If hostelId was passed from navigation, set it as selected
+    if (hostelIdFromNav) {
+      setSelectedHostel(hostelIdFromNav);
+    }
+  }, [hostelIdFromNav]);
 
   useEffect(() => {
-    if (selectedHostel) {
-      getRooms(selectedHostel, { available: true });
-    }
+    const fetchRooms = async () => {
+      if (selectedHostel) {
+        setRoomLoading(true);
+        try {
+          console.log('🔍 Starting to fetch rooms for hostel:', selectedHostel);
+          const roomsData = await getRooms(selectedHostel);
+          console.log('🏠 Rooms data received:', roomsData);
+          console.log('📈 Total rooms count:', roomsData.length);
+        } catch (error) {
+          console.error('💥 Error in fetchRooms:', error);
+          console.log('📋 Error message:', error.message);
+        } finally {
+          setRoomLoading(false);
+        }
+      } else {
+        console.log('🚫 No hostel selected, clearing rooms');
+        useHostelStore.setState({ rooms: [] });
+        setSelectedRoom('');
+      }
+    };
+
+    fetchRooms();
   }, [selectedHostel]);
 
   const filteredStudents = students.filter(student => {
@@ -35,17 +63,22 @@ const HostelAllocation = () => {
     }
   });
 
+  const availableRooms = rooms.filter(room => 
+    room.status === 'available' && room.currentOccupancy < room.capacity
+  );
+
   const handleAllocate = async () => {
     if (selectedStudent && selectedRoom) {
       try {
-        await allocateRoom({
-          studentId: selectedStudent,
-          roomId: selectedRoom
-        });
+        // FIXED: Pass studentId and roomId as separate parameters, not as object
+        await allocateRoom(selectedStudent, selectedRoom);
         setShowAllocationModal(false);
         setSelectedStudent('');
         setSelectedRoom('');
-        setSelectedHostel('');
+        // Don't reset selectedHostel if it came from navigation
+        if (!hostelIdFromNav) {
+          setSelectedHostel('');
+        }
         getStudents({ limit: 1000 });
         getOccupancyStats();
       } catch (error) {
@@ -57,9 +90,8 @@ const HostelAllocation = () => {
   const handleDeallocate = async () => {
     if (selectedStudent) {
       try {
-        await deallocateRoom({
-          studentId: selectedStudent
-        });
+        // FIXED: Pass studentId as parameter, not as object
+        await deallocateRoom(selectedStudent);
         setShowDeallocationModal(false);
         setSelectedStudent('');
         getStudents({ limit: 1000 });
@@ -76,6 +108,16 @@ const HostelAllocation = () => {
         <h1 className="text-2xl font-bold text-gray-900">Hostel Allocation</h1>
         <p className="text-gray-600">Manage student hostel room allocations</p>
       </div>
+
+      {/* Error Message */}
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-md p-4">
+          <div className="flex items-center">
+            <AlertCircleIcon className="h-5 w-5 text-red-400 mr-2" />
+            <span className="text-red-700">{error}</span>
+          </div>
+        </div>
+      )}
 
       {/* Action Tabs */}
       <div className="bg-white rounded-lg shadow">
@@ -122,6 +164,9 @@ const HostelAllocation = () => {
                       </option>
                     ))}
                   </select>
+                  {filteredStudents.length === 0 && (
+                    <p className="text-xs text-gray-500 mt-1">No unallocated students found</p>
+                  )}
                 </div>
 
                 <div>
@@ -142,19 +187,38 @@ const HostelAllocation = () => {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700">Select Room</label>
-                  <select
-                    value={selectedRoom}
-                    onChange={(e) => setSelectedRoom(e.target.value)}
-                    disabled={!selectedHostel}
-                    className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50"
-                  >
-                    <option value="">Select Room</option>
-                    {rooms.map((room) => (
-                      <option key={room._id} value={room._id}>
-                        Room {room.roomNumber} (Floor {room.floor}) - {room.capacity - room.currentOccupancy} beds available
-                      </option>
-                    ))}
-                  </select>
+                  {roomLoading ? (
+                    <div className="mt-1 flex items-center justify-center border border-gray-300 rounded-md px-3 py-2">
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500"></div>
+                      <span className="ml-2 text-sm text-gray-500">Loading rooms...</span>
+                    </div>
+                  ) : (
+                    <>
+                      <select
+                        value={selectedRoom}
+                        onChange={(e) => setSelectedRoom(e.target.value)}
+                        disabled={!selectedHostel || availableRooms.length === 0}
+                        className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50"
+                      >
+                        <option value="">Select Room</option>
+                        {availableRooms.map((room) => (
+                          <option key={room._id} value={room._id}>
+                            Room {room.roomNumber} (Floor {room.floor}) - {room.capacity - room.currentOccupancy} beds available
+                          </option>
+                        ))}
+                      </select>
+                      {selectedHostel && availableRooms.length === 0 && (
+                        <p className="text-xs text-red-500 mt-1">
+                          No available rooms found in this hostel
+                        </p>
+                      )}
+                      {selectedHostel && rooms.length > 0 && availableRooms.length > 0 && (
+                        <p className="text-xs text-green-500 mt-1">
+                          {availableRooms.length} available room(s)
+                        </p>
+                      )}
+                    </>
+                  )}
                 </div>
               </div>
 
@@ -165,6 +229,8 @@ const HostelAllocation = () => {
               >
                 Allocate Room
               </button>
+
+          
             </div>
           ) : (
             <div className="space-y-4">

@@ -1,14 +1,16 @@
 import { useState, useEffect } from 'react';
-import { PlusIcon, BuildingIcon, UsersIcon } from 'lucide-react';
+import { PlusIcon, BuildingIcon, UsersIcon, BedIcon, MapIcon } from 'lucide-react';
 import useHostelStore from '../../stores/hostelStore';
+import { useNavigate } from 'react-router-dom';
 import Table from '../common/Table';
 import Modal from '../common/Modal';
 import Loader from '../common/Loader';
 
 const HostelManagement = () => {
-  const { hostels, loading, getHostels, createHostel, deleteHostel } = useHostelStore();
+  const { hostels, loading, getHostels, createHostel, deleteHostel, createRoom } = useHostelStore();
   const [showHostelModal, setShowHostelModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showRoomModal, setShowRoomModal] = useState(false);
   const [selectedHostel, setSelectedHostel] = useState(null);
   const [formData, setFormData] = useState({
     name: '',
@@ -29,6 +31,17 @@ const HostelManagement = () => {
     rules: [],
     status: 'active'
   });
+
+  const [roomFormData, setRoomFormData] = useState({
+    roomNumber: '',
+    floor: 1,
+    capacity: 4,
+    amenities: [],
+    price: 5000,
+    status: 'available'
+  });
+
+  const navigate = useNavigate();
 
   useEffect(() => {
     getHostels();
@@ -120,6 +133,26 @@ const HostelManagement = () => {
     }
   };
 
+  const handleCreateRoom = async (e) => {
+    e.preventDefault();
+    try {
+      await createRoom(selectedHostel._id, roomFormData);
+      setShowRoomModal(false);
+      setRoomFormData({
+        roomNumber: '',
+        floor: 1,
+        capacity: 4,
+        amenities: [],
+        price: 5000,
+        status: 'available'
+      });
+      // Refresh the hostels list to update room counts
+      getHostels();
+    } catch (error) {
+      console.error('Error creating room:', error);
+    }
+  };
+
   const handleDeleteClick = (hostel) => {
     setSelectedHostel(hostel);
     setShowDeleteModal(true);
@@ -132,6 +165,19 @@ const HostelManagement = () => {
       setSelectedHostel(null);
       getHostels();
     }
+  };
+
+  const handleViewRooms = (hostelId) => {
+    navigate('/hostels/rooms', { state: { hostelId } });
+  };
+
+  const handleAllocateRoom = (hostelId) => {
+    navigate('/hostels/allocate', { state: { hostelId } });
+  };
+
+  const handleAddRoom = (hostel) => {
+    setSelectedHostel(hostel);
+    setShowRoomModal(true);
   };
 
   const columns = [
@@ -177,8 +223,26 @@ const HostelManagement = () => {
       render: (hostel) => (
         <div className="flex space-x-2">
           <button
+            onClick={() => handleViewRooms(hostel._id)}
+            className="text-blue-600 hover:text-blue-900 text-sm"
+          >
+            View Rooms
+          </button>
+          <button
+            onClick={() => handleAllocateRoom(hostel._id)}
+            className="text-green-600 hover:text-green-900 text-sm"
+          >
+            Allocate
+          </button>
+          <button
+            onClick={() => handleAddRoom(hostel)}
+            className="text-purple-600 hover:text-purple-900 text-sm"
+          >
+            Add Room
+          </button>
+          <button
             onClick={() => handleDeleteClick(hostel)}
-            className="text-red-600 hover:text-red-900"
+            className="text-red-600 hover:text-red-900 text-sm"
           >
             Delete
           </button>
@@ -196,13 +260,39 @@ const HostelManagement = () => {
           <h1 className="text-2xl font-bold text-gray-900">Hostel Management</h1>
           <p className="text-gray-600">Manage college hostels and rooms</p>
         </div>
-        <button
-          onClick={() => setShowHostelModal(true)}
-          className="bg-blue-600 text-white px-4 py-2 rounded-md flex items-center space-x-2 hover:bg-blue-700"
-        >
-          <PlusIcon className="h-5 w-5" />
-          <span>Add Hostel</span>
-        </button>
+        <div className="flex space-x-2">
+          <button
+            onClick={() => navigate('/hostels/allocate')}
+            className="bg-green-600 text-white px-4 py-2 rounded-md flex items-center space-x-2 hover:bg-green-700"
+          >
+            <BedIcon className="h-5 w-5" />
+            <span>Allocate Rooms</span>
+          </button>
+          <button
+            onClick={() => navigate('/hostels/rooms')}
+            className="bg-purple-600 text-white px-4 py-2 rounded-md flex items-center space-x-2 hover:bg-purple-700"
+          >
+            <MapIcon className="h-5 w-5" />
+            <span>View Rooms</span>
+          </button>
+          <button
+            onClick={() => setShowHostelModal(true)}
+            className="bg-blue-600 text-white px-4 py-2 rounded-md flex items-center space-x-2 hover:bg-blue-700"
+          >
+            <PlusIcon className="h-5 w-5" />
+            <span>Add Hostel</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Hostels Table */}
+      <div className="bg-white p-6 rounded-lg shadow">
+        <Table
+          columns={columns}
+          data={hostels}
+          loading={loading}
+          pagination={null} // No pagination needed for hostels
+        />
       </div>
 
       {/* Hostels Grid */}
@@ -252,6 +342,27 @@ const HostelManagement = () => {
                 </div>
               </div>
             )}
+
+            <div className="mt-4 pt-4 border-t border-gray-200 flex space-x-2">
+              <button
+                onClick={() => handleViewRooms(hostel._id)}
+                className="flex-1 bg-blue-600 text-white py-1 px-2 rounded text-sm hover:bg-blue-700"
+              >
+                View Rooms
+              </button>
+              <button
+                onClick={() => handleAllocateRoom(hostel._id)}
+                className="flex-1 bg-green-600 text-white py-1 px-2 rounded text-sm hover:bg-green-700"
+              >
+                Allocate
+              </button>
+              <button
+                onClick={() => handleAddRoom(hostel)}
+                className="flex-1 bg-purple-600 text-white py-1 px-2 rounded text-sm hover:bg-purple-700"
+              >
+                Add Room
+              </button>
+            </div>
           </div>
         ))}
       </div>
@@ -468,6 +579,96 @@ const HostelManagement = () => {
               className="px-4 py-2 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700"
             >
               Create Hostel
+            </button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* Add Room Modal */}
+      <Modal
+        isOpen={showRoomModal}
+        onClose={() => setShowRoomModal(false)}
+        title={`Add Room to ${selectedHostel?.name}`}
+        size="md"
+      >
+        <form onSubmit={handleCreateRoom} className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Room Number *</label>
+              <input
+                type="text"
+                value={roomFormData.roomNumber}
+                onChange={(e) => setRoomFormData({...roomFormData, roomNumber: e.target.value})}
+                required
+                className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+              />
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Floor *</label>
+              <input
+                type="number"
+                value={roomFormData.floor}
+                onChange={(e) => setRoomFormData({...roomFormData, floor: parseInt(e.target.value)})}
+                required
+                min="1"
+                className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+              />
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Capacity *</label>
+              <select
+                value={roomFormData.capacity}
+                onChange={(e) => setRoomFormData({...roomFormData, capacity: parseInt(e.target.value)})}
+                required
+                className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value={2}>2 beds</option>
+                <option value={4}>4 beds</option>
+                <option value={6}>6 beds</option>
+              </select>
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Price *</label>
+              <input
+                type="number"
+                value={roomFormData.price}
+                onChange={(e) => setRoomFormData({...roomFormData, price: parseInt(e.target.value)})}
+                required
+                min="0"
+                className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+              />
+            </div>
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Status</label>
+            <select
+              value={roomFormData.status}
+              onChange={(e) => setRoomFormData({...roomFormData, status: e.target.value})}
+              className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+            >
+              <option value="available">Available</option>
+              <option value="maintenance">Maintenance</option>
+              <option value="reserved">Reserved</option>
+            </select>
+          </div>
+          
+          <div className="flex justify-end space-x-3">
+            <button
+              type="button"
+              onClick={() => setShowRoomModal(false)}
+              className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="px-4 py-2 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700"
+            >
+              Create Room
             </button>
           </div>
         </form>
