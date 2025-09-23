@@ -45,26 +45,38 @@ roomSchema.methods.isAvailable = function() {
   return this.status === 'available' && this.currentOccupancy < this.capacity;
 };
 
-// Add student to room
-roomSchema.methods.addStudent = function() {
-  if (this.isAvailable()) {
+// Add student to room - IMPROVED VERSION
+roomSchema.methods.addStudent = async function() {
+  if (this.currentOccupancy < this.capacity) {
     this.currentOccupancy += 1;
+    
+    // Update status based on occupancy
     if (this.currentOccupancy >= this.capacity) {
       this.status = 'occupied';
+    } else if (this.currentOccupancy > 0) {
+      this.status = 'occupied'; // Change to occupied even if not full
     }
-    return this.save();
+    
+    await this.save();
+    return this;
   }
-  throw new Error('Room is not available');
+  throw new Error('Room is at full capacity');
 };
 
-// Remove student from room
-roomSchema.methods.removeStudent = function() {
+// Remove student from room - IMPROVED VERSION
+roomSchema.methods.removeStudent = async function() {
   if (this.currentOccupancy > 0) {
     this.currentOccupancy -= 1;
-    if (this.currentOccupancy < this.capacity) {
+    
+    // Update status based on occupancy
+    if (this.currentOccupancy === 0) {
       this.status = 'available';
+    } else {
+      this.status = 'occupied'; // Still occupied but with space
     }
-    return this.save();
+    
+    await this.save();
+    return this;
   }
   throw new Error('No students in this room');
 };

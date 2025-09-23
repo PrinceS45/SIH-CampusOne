@@ -146,9 +146,15 @@ getRooms: async (hostelId, params = {}) => {
 allocateRoom: async (studentId, roomId) => {
   try {
     const response = await api.post('/hostels/allocate', {
-      studentId: studentId,  // Just the string, not an object
-      roomId: roomId         // Just the string, not an object
+      studentId: studentId,
+      roomId: roomId
     });
+    
+    // Refresh data after allocation
+    const { getHostels, getRooms, getOccupancyStats } = get();
+    await getHostels();
+    await getOccupancyStats();
+    
     return response.data;
   } catch (error) {
     throw error;
@@ -158,8 +164,14 @@ allocateRoom: async (studentId, roomId) => {
 deallocateRoom: async (studentId) => {
   try {
     const response = await api.post('/hostels/deallocate', {
-      studentId: studentId  // Just the string, not an object
+      studentId: studentId
     });
+    
+    // Refresh data after deallocation
+    const { getHostels, getOccupancyStats } = get();
+    await getHostels();
+    await getOccupancyStats();
+    
     return response.data;
   } catch (error) {
     throw error;

@@ -67,25 +67,32 @@ const HostelAllocation = () => {
     room.status === 'available' && room.currentOccupancy < room.capacity
   );
 
-  const handleAllocate = async () => {
-    if (selectedStudent && selectedRoom) {
-      try {
-        // FIXED: Pass studentId and roomId as separate parameters, not as object
-        await allocateRoom(selectedStudent, selectedRoom);
-        setShowAllocationModal(false);
-        setSelectedStudent('');
-        setSelectedRoom('');
-        // Don't reset selectedHostel if it came from navigation
-        if (!hostelIdFromNav) {
-          setSelectedHostel('');
-        }
-        getStudents({ limit: 1000 });
-        getOccupancyStats();
-      } catch (error) {
-        console.error('Error allocating room:', error);
+const handleAllocate = async () => {
+  if (selectedStudent && selectedRoom) {
+    try {
+      await allocateRoom(selectedStudent, selectedRoom);
+      
+      // Refresh all relevant data
+      await getRooms(selectedHostel); // Refresh rooms for current hostel
+      await getStudents({ limit: 1000 });
+      await getOccupancyStats();
+      
+      setShowAllocationModal(false);
+      setSelectedStudent('');
+      setSelectedRoom('');
+      
+      // Force UI refresh by clearing and re-fetching rooms
+      if (hostelIdFromNav) {
+        // Re-fetch rooms to ensure UI is updated
+        const roomsData = await getRooms(selectedHostel);
+        console.log('🔄 Rooms refreshed after allocation:', roomsData);
       }
+      
+    } catch (error) {
+      console.error('Error allocating room:', error);
     }
-  };
+  }
+};
 
   const handleDeallocate = async () => {
     if (selectedStudent) {

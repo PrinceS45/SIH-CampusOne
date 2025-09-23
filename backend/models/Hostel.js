@@ -60,34 +60,43 @@ hostelSchema.virtual('rooms', {
 });
 
 // Update room counts
+// Update room counts - IMPROVED VERSION
 hostelSchema.methods.updateRoomCounts = async function() {
   const Room = mongoose.model('Room');
-  const roomCounts = await Room.aggregate([
+  
+  const roomStats = await Room.aggregate([
     { $match: { hostel: this._id } },
     {
       $group: {
-        _id: '$status',
-        count: { $sum: 1 }
+        _id: null,
+        totalRooms: { $sum: 1 },
+        occupiedRooms: { 
+          $sum: { 
+            $cond: [{ $in: ['$status', ['occupied']] }, 1, 0] 
+          } 
+        },
+        availableRooms: { 
+          $sum: { 
+            $cond: [{ $eq: ['$status', 'available'] }, 1, 0] 
+          } 
+        }
       }
     }
   ]);
   
-  let occupied = 0;
-  let available = 0;
+  if (roomStats.length > 0) {
+    this.totalRooms = roomStats[0].totalRooms;
+    this.occupiedRooms = roomStats[0].occupiedRooms;
+    this.availableRooms = roomStats[0].availableRooms;
+  } else {
+    this.totalRooms = 0;
+    this.occupiedRooms = 0;
+    this.availableRooms = 0;
+  }
   
-  roomCounts.forEach(count => {
-    if (count._id === 'occupied') {
-      occupied = count.count;
-    } else if (count._id === 'available') {
-      available = count.count;
-    }
-  });
-  
-  this.occupiedRooms = occupied;
-  this.availableRooms = available;
-  return this.save();
+  await this.save();
+  return this;
 };
-
 const Hostel = mongoose.model('Hostel', hostelSchema);
 
 export { Hostel };

@@ -350,11 +350,14 @@ router.post('/allocate', auth, authorize('admin', 'staff'), async (req, res) => 
       }
     });
     
-    res.json({ 
-      message: 'Room allocated successfully',
-      student,
-      room 
-    });
+    // After allocation, return populated data
+res.json({ 
+  message: 'Room allocated successfully',
+  student: await Student.findById(student._id)
+    .populate('hostel')
+    .populate('room'),
+  room: await Room.findById(room._id).populate('hostel')
+});
   } catch (error) {
     res.status(400).json({ message: error.message });
   }
