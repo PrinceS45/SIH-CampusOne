@@ -131,6 +131,7 @@ getRooms: async (hostelId, params = {}) => {
   },
 
   deleteRoom: async (roomId) => {
+    
     set({ loading: true, error: null });
     try {
       await api.delete(`/hostels/rooms/${roomId}`);
@@ -144,6 +145,8 @@ getRooms: async (hostelId, params = {}) => {
 
  // In your hostelStore.js
 allocateRoom: async (studentId, roomId) => {
+      set({ loading: true, error: null });
+
   try {
     const response = await api.post('/hostels/allocate', {
       studentId: studentId,
@@ -154,14 +157,20 @@ allocateRoom: async (studentId, roomId) => {
     const { getHostels, getRooms, getOccupancyStats } = get();
     await getHostels();
     await getOccupancyStats();
+          set({loading: false });
+
     
     return response.data;
   } catch (error) {
+          set({ error: message, loading: false });
+
     throw error;
   }
 },
 
 deallocateRoom: async (studentId) => {
+        set({ loading: true, error: null });
+
   try {
     const response = await api.post('/hostels/deallocate', {
       studentId: studentId
@@ -171,9 +180,13 @@ deallocateRoom: async (studentId) => {
     const { getHostels, getOccupancyStats } = get();
     await getHostels();
     await getOccupancyStats();
+              set({loading: false });
+
     
     return response.data;
   } catch (error) {
+              set({ error: message, loading: false });
+
     throw error;
   }
 } , 

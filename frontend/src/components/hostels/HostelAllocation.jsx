@@ -295,7 +295,7 @@ const handleAllocate = async () => {
               onClick={handleAllocate}
               className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
             >
-              Confirm Allocation
+              {loading ? "Allocating" : "Confirm Allocation"}
             </button>
           </div>
         </div>
@@ -324,7 +324,8 @@ const handleAllocate = async () => {
               onClick={handleDeallocate}
               className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
             >
-              Confirm Deallocation
+                            {loading ? "Deallocating" : "Confirm Deallocate"}
+
             </button>
           </div>
         </div>
