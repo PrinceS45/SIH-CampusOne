@@ -69,7 +69,8 @@ const HostelAllocation = () => {
 
 const handleAllocate = async () => {
   if (selectedStudent && selectedRoom) {
-    try {
+    try { 
+      loading = true ; 
       await allocateRoom(selectedStudent, selectedRoom);
       
       // Refresh all relevant data
@@ -80,6 +81,7 @@ const handleAllocate = async () => {
       setShowAllocationModal(false);
       setSelectedStudent('');
       setSelectedRoom('');
+      loading = false ; 
       
       // Force UI refresh by clearing and re-fetching rooms
       if (hostelIdFromNav) {
@@ -98,9 +100,13 @@ const handleAllocate = async () => {
     if (selectedStudent) {
       try {
         // FIXED: Pass studentId as parameter, not as object
+              loading = true ; 
+
         await deallocateRoom(selectedStudent);
         setShowDeallocationModal(false);
         setSelectedStudent('');
+              loading = false ; 
+
         getStudents({ limit: 1000 });
         getOccupancyStats();
       } catch (error) {
@@ -130,7 +136,7 @@ const handleAllocate = async () => {
       <div className="bg-white rounded-lg shadow">
         <div className="border-b border-gray-200">
           <nav className="flex space-x-8 px-6">
-            <button
+            <button disabled = {loading}
               onClick={() => setCurrentAction('allocate')}
               className={`py-4 px-1 border-b-2 font-medium text-sm ${
                 currentAction === 'allocate'
@@ -140,7 +146,7 @@ const handleAllocate = async () => {
             >
               Allocate Room
             </button>
-            <button
+            <button  disabled = {loading} 
               onClick={() => setCurrentAction('deallocate')}
               className={`py-4 px-1 border-b-2 font-medium text-sm ${
                 currentAction === 'deallocate'
