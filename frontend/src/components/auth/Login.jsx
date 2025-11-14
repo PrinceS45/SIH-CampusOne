@@ -322,7 +322,7 @@ const Login = () => {
             <p className="text-sm text-gray-600">
               Demo Credentials:{' '}
               <span className="font-mono text-xs bg-gray-100 p-1 rounded">
-                email : admin45@gmail.com / password : 7054454265
+                email : admin45@gmail.com / password : LightYagami
               </span>
             </p>
           </div>

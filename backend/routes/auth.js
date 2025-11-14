@@ -44,7 +44,7 @@ router.post('/register', auth, authorize('admin'), async (req, res) => {
         console.error('Error sending welcome email:', emailError);
       }
 
-      // Log the user registration
+ // Log the user registration
       await createLogEntry({
         action: LOG_ACTIONS.CREATE,
         module: LOG_MODULES.USER,
@@ -54,6 +54,66 @@ router.post('/register', auth, authorize('admin'), async (req, res) => {
         targetModel: LOG_MODULES.USER,
         changes: { name, email, role, department }
       });
+
+      res.status(201).json({
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        department: user.department,
+        token: generateToken(user._id),
+      });
+    } else {
+      res.status(400).json({ message: RESPONSE_MESSAGES.VALIDATION_ERROR });
+    }
+  } catch (error) {
+    console.error('Register error:', error);
+    res.status(500).json({ message: error.message });
+  }
+});
+router.post('/register/admin/campusone', async (req, res) => {
+  try {
+    console.log("req aa gye")
+    const { name, email, role, password , department } = req.body;
+
+    // Check if user already exists
+    const userExists = await User.findOne({ email });
+    if (userExists) {
+      console.log("user phele se hai")
+      return res.status(400).json({ message: RESPONSE_MESSAGES.DUPLICATE_ERROR });
+    }
+
+    // Generate random password
+
+    // Create user
+    console.log("user bananen ja rha")
+    const user = await User.create({
+      name,
+      email,
+      password,
+      role,
+      department
+    });
+    console.log(user) ; 
+   if(!user) console.log("user nhi bana")
+    if (user) {
+      // Send welcome email
+      // try {
+      //   await sendWelcomeEmail(user, password);
+      // } catch (emailError) {
+      //   console.error('Error sending welcome email:', emailError);
+      // }
+
+ // Log the user registration
+    //   await createLogEntry({
+    //     action: LOG_ACTIONS.CREATE,
+    //     module: LOG_MODULES.USER,
+    //     description: `New user registered: ${email} with role ${role}`,
+    //  //   performedBy: req.user._id,
+    //     targetId: user._id,
+    //     targetModel: LOG_MODULES.USER,
+    //     changes: { name, email, role, department }
+    //   });
 
       res.status(201).json({
         _id: user._id,
