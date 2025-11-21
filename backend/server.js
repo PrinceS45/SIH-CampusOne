@@ -49,7 +49,7 @@ const limiter = rateLimit({
 });
 
 // Apply rate limiting to all routes except health check
-app.use(limiter);
+//app.use(limiter);
 
 // More generous rate limiting specifically for auth routes
 const authLimiter = rateLimit({
@@ -63,7 +63,7 @@ const authLimiter = rateLimit({
 });
 
 // Apply specific rate limiting to auth routes
-app.use('/api/auth/login', authLimiter);
+//app.use('/api/auth/login', authLimiter);
 
 // Serve static files from uploads directory
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
