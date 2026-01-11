@@ -1,23 +1,23 @@
+import {
+  BookOpenIcon,
+  BuildingIcon,
+  CalendarIcon,
+  CreditCardIcon,
+  TrendingUpIcon,
+  UsersIcon
+} from 'lucide-react';
 import { useEffect } from 'react';
 import {
-  UsersIcon,
-  CreditCardIcon,
-  BuildingIcon,
-  BookOpenIcon,
-  TrendingUpIcon,
-  CalendarIcon
-} from 'lucide-react';
-import {
-  BarChart,
   Bar,
-  XAxis,
-  YAxis,
+  BarChart,
   CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  PieChart,
+  Cell,
   Pie,
-  Cell
+  PieChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis
 } from 'recharts';
 import useDashboardStore from '../../stores/dashboardStore';
 import Loader from '../common/Loader';
@@ -81,7 +81,7 @@ const AdminDashboard = () => {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-        <p className="text-gray-600">Welcome to Student Management System</p>
+        <p className="text-gray-600">NextGen Student Management System</p>
       </div>
 
       {/* Stats Grid */}
@@ -109,7 +109,7 @@ const AdminDashboard = () => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Fee Collection Chart */}
         <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Fee Collection (2023)</h3>
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Fee Collection (2026)</h3>
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={feeData}>
               <CartesianGrid strokeDasharray="3 3" />
