@@ -1,6 +1,8 @@
 import express from 'express';
 import { auth, authorize } from '../middleware/auth.js';
 import upload, { handleFileUpload } from '../middleware/upload.js';
+import uploadMiddleware from '../middleware/multerMiddlware.js';
+import {cloudinaryUpload} from '../lib/cloudinary.js';
 import Student from '../models/Student.js';
 import { createLogEntry } from '../middleware/logging.js';
 import { LOG_ACTIONS, LOG_MODULES, RESPONSE_MESSAGES } from '../utils/constants.js';
@@ -72,7 +74,7 @@ router.get('/:id', auth, async (req, res) => {
 // @route   POST /api/students
 // @desc    Create a new student
 // @access  Private/Admin
-router.post('/', auth, authorize('admin', 'staff'), upload.single('photo'), async (req, res) => {
+router.post('/', auth, authorize('admin', 'staff'), uploadMiddleware.single("photo"), async (req, res) => {
   try {
     const studentData = { ...req.body };
     
@@ -95,9 +97,11 @@ router.post('/', auth, authorize('admin', 'staff'), upload.single('photo'), asyn
     
     // Handle file upload (Memory storage + Cloudinary)
     if (req.file) {
-      const fileInfo = await handleFileUpload(req.file, 'students/photos');
+      // const fileInfo = await handleFileUpload(req.file, 'students/photos');
+      const fileInfo = await cloudinaryUpload(req.file) ; // multer memory storage
       if (fileInfo) {
-        studentData.photo = fileInfo.url;
+        studentData.photo = fileInfo.secure_url;
+        studentData.photoPublicId = fileInfo.public_id ;
       }
     }
     

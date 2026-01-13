@@ -27,7 +27,7 @@ function App() {
   // Check if user is authenticated on app load
   useEffect(() => {
     initializeAuth();
-  }, [initializeAuth]);
+  }, []);
 
   const ProtectedRoute = ({ children, allowedRoles = [] }) => {
     if (!isAuthenticated) {
