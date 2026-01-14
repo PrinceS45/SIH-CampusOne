@@ -6,6 +6,7 @@ import {cloudinaryUpload} from '../lib/cloudinary.js';
 import Student from '../models/Student.js';
 import { createLogEntry } from '../middleware/logging.js';
 import { LOG_ACTIONS, LOG_MODULES, RESPONSE_MESSAGES } from '../utils/constants.js';
+import sendStudentEmail from "../scripts/sendStudentRegistrationEmail.js" ;
 
 const router = express.Router();
 
@@ -107,7 +108,15 @@ router.post('/', auth, authorize('admin', 'staff'), uploadMiddleware.single("pho
     
     const student = new Student(studentData);
     await student.save();
-    
+
+    await sendStudentEmail({
+      name: `${student.firstName} ${student.lastName}`,
+      course: student.course,
+      semester: student.semester,
+      student_id: student.studentId,
+      email: student.email
+    });
+
     // Log student creation
     await createLogEntry({
       action: LOG_ACTIONS.CREATE,
