@@ -16,6 +16,7 @@ import hostelRoutes from './routes/hostels.js';
 import examRoutes from './routes/exams.js';
 import dashboardRoutes from './routes/dashboard.js';
 import logRoutes from './routes/logs.js';
+import feedRoutes from './routes/feed.js';
 
 import errorHandler from './middleware/error.js';
 import { requestLogger } from './middleware/logging.js';
@@ -83,6 +84,7 @@ app.use('/api/hostels', hostelRoutes);
 app.use('/api/exams', examRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/logs', logRoutes);
+app.use('/api/feed', feedRoutes);
 
 // Health check endpoint (no rate limiting)
 app.get('/health', (req, res) => {
