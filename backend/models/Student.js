@@ -71,7 +71,12 @@ const studentSchema = new mongoose.Schema({
     enum: ['active', 'inactive', 'completed', 'dropped' ,'suspended'],
     default: 'active'
   },
-  photo: String,
+  photo : {
+    type : String , 
+  } , 
+  photoPublicId : {
+    type : String  , 
+  } , 
   documents: [documentSchema],
   hostel: {
     type: mongoose.Schema.Types.ObjectId,

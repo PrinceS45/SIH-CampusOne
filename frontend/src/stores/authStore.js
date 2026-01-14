@@ -46,6 +46,12 @@ const useAuthStore = create(
         token, 
         user: JSON.parse(userData) 
       });
+    } else {
+      set({ 
+        isAuthenticated: false, 
+        token: null, 
+        user: null 
+      });
     }
   },
       register: async (userData) => {
