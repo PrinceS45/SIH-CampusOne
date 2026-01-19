@@ -1,10 +1,9 @@
-import { useState, useEffect } from 'react';
-import { UserIcon, BuildingIcon, HomeIcon, AlertCircleIcon } from 'lucide-react';
+import { AlertCircleIcon } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import useHostelStore from '../../stores/hostelStore';
 import useStudentStore from '../../stores/studentStore';
 import Modal from '../common/Modal';
-import Loader from '../common/Loader';
-import { useLocation } from 'react-router-dom';
 
 const HostelAllocation = () => {
   const { hostels, rooms, loading, error, getRooms, allocateRoom, deallocateRoom, getOccupancyStats } = useHostelStore();
@@ -295,7 +294,7 @@ const handleAllocate = async () => {
               onClick={handleAllocate}
               className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
             >
-              {loading ? "Allocating" : "Confirm Allocation"}
+              {loading ? "Allocating..." : "Confirm Allocation"}
             </button>
           </div>
         </div>
@@ -324,7 +323,7 @@ const handleAllocate = async () => {
               onClick={handleDeallocate}
               className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
             >
-                            {loading ? "Deallocating" : "Confirm Deallocate"}
+                            {loading ? "Deallocating..." : "Confirm Deallocate"}
 
             </button>
           </div>
