@@ -6,7 +6,8 @@ import {
   BuildingIcon,
   BookOpenIcon,
   BarChartIcon,
-  XIcon
+  XIcon,
+GalleryHorizontal 
 } from 'lucide-react';
 import useAuthStore from '../../stores/authStore';
 
@@ -18,6 +19,7 @@ const navigation = [
   { name: 'Exam Records', href: '/exams', icon: BookOpenIcon },
   { name: 'Reports', href: '/reports', icon: BarChartIcon },
 ];
+// {name : 'Feed' , href : '/feed' , icon : GalleryHorizontal}
 
 // Student-only navigation (if you want to add student-specific pages later)
 const studentNavigation = [

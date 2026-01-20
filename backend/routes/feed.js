@@ -145,7 +145,7 @@ router.post("/comment/:id" , auth , async (req , res) => {
             user : userId , 
             feed : feedId ,
             text : text ,
-            like : 0  , 
+            likes : 0  , 
         }) ; 
         await newComment.save() ; 
         return res.status(201).json(newComment) ;
@@ -177,26 +177,7 @@ router.get("/comment/:id" , auth , async (req , res) => {
     }
 })  ; 
 
-// @ route post api/feed/like/:commentId
-// @ desc like a comment
-// @ access Private
-router.post("/like/:commentId" , auth , async (req , res) => {
-    try {
-        const commentId = req.params.commentId ; 
-        const comment = await Comment.findById(commentId) ; 
-        if(!comment) {
-            return res.status(404).json({message : "Comment not found"}) ; 
-        }           
-        comment.likes += 1 ; 
-        await comment.save() ; 
-        return res.status(200).json({message : "Comment liked successfully" , likes : comment.likes}) ; 
-    } catch (error) {
-        console.error("Error liking comment: ", error) ; 
-        res.status(500).json({message : "Server Error"}) ;   
-    }
-}) ; 
-
-//@ ROUT POST api/feed/LIKE/FEED/:feedId
+//@ ROUT POST api/feed/like/feed/:feedId
 //@ DESC LIKE A FEED POST
 //@ ACCESS PRIVATE
 router.post("/like/feed/:feedId" , auth , async (req , res) => {
@@ -215,5 +196,24 @@ router.post("/like/feed/:feedId" , auth , async (req , res) => {
         res.status(500).json({message : "Server Error"}) ;   
     }
 }) ;
+
+// @ route post api/feed/like/:commentId
+// @ desc like a comment
+// @ access Private
+router.post("/like/:commentId" , auth , async (req , res) => {
+    try {
+        const commentId = req.params.commentId ; 
+        const comment = await Comment.findById(commentId) ; 
+        if(!comment) {
+            return res.status(404).json({message : "Comment not found"}) ; 
+        }           
+        comment.likes += 1 ; 
+        await comment.save() ; 
+        return res.status(200).json({message : "Comment liked successfully" , likes : comment.likes}) ; 
+    } catch (error) {
+        console.error("Error liking comment: ", error) ; 
+        res.status(500).json({message : "Server Error"}) ;   
+    }
+}) ; 
 
 export default router ;

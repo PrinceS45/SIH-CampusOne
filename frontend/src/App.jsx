@@ -18,8 +18,8 @@ import DashboardReports from './components/reports/DashboardReports';
 import useAuthStore from "./stores/authStore.js"
 import StudentEdit from './components/students/StudentEdit.jsx';
 import FeeReceipt from './components/fees/FeeReceipt';
-
 import StudentDashboard from './components/dashboard/StudentDashboard.jsx';
+import Feed from './components/feed/feed';
 
 function App() {
   const { isAuthenticated, user, initializeAuth } = useAuthStore();
@@ -169,7 +169,7 @@ function App() {
         <Route
           path="/exams/gradesheet/:studentId"
           element={
-            <ProtectedRoute>
+            <ProtectedRoute allowedRoles={['admin', 'staff', 'student']}>
               <GradeSheet />
             </ProtectedRoute>
           }
@@ -183,6 +183,16 @@ function App() {
             </ProtectedRoute>
           }
         />
+       
+        <Route
+          path="/feed"
+          element={
+            <ProtectedRoute allowedRoles={['admin', 'staff', 'student']}>
+              <Feed />
+            </ProtectedRoute>
+          }
+        />
+
 
         <Route
           path="/"

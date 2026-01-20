@@ -33,7 +33,7 @@ export const sendWelcomeEmail = async (user, password) => {
     }
 
     const mailOptions = {
-      from: process.env.SMTP_FROM || process.env.SMTP_USER,
+      from: process.env.APP_EMAIL || process.env.SMTP_USER,
       to: user.email,
       subject: 'Welcome to Student ERP System',
       html: `
@@ -68,7 +68,7 @@ export const sendFeeReceipt = async (fee, student) => {
     }
 
     const mailOptions = {
-      from: process.env.SMTP_FROM || process.env.SMTP_USER,
+      from: process.env.APP_EMAIL || process.env.SMTP_USER,
       to: student.email,
       subject: `Fee Receipt - ${fee.receiptNo}`,
       html: `

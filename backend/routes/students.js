@@ -108,27 +108,32 @@ router.post('/', auth, authorize('admin', 'staff'), uploadMiddleware.single("pho
     
     const student = new Student(studentData);
     await student.save();
+    res.status(201).json(student);
 
-    await sendStudentEmail({
+    setImmediate(async () =>  {
+       await sendStudentEmail({
       name: `${student.firstName} ${student.lastName}`,
       course: student.course,
       semester: student.semester,
       student_id: student.studentId,
       email: student.email
     });
+    })
+
+
 
     // Log student creation
-    await createLogEntry({
-      action: LOG_ACTIONS.CREATE,
-      module: LOG_MODULES.STUDENT,
-      description: `New student created: ${student.firstName} ${student.lastName} (${student.studentId})`,
-      performedBy: req.user._id,
-      targetId: student._id,
-      targetModel: LOG_MODULES.STUDENT,
-      changes: studentData
-    });
+    // await createLogEntry({
+    //   action: LOG_ACTIONS.CREATE,
+    //   module: LOG_MODULES.STUDENT,
+    //   description: `New student created: ${student.firstName} ${student.lastName} (${student.studentId})`,
+    //   performedBy: req.user._id,
+    //   targetId: student._id,
+    //   targetModel: LOG_MODULES.STUDENT,
+    //   changes: studentData
+    // });
     
-    res.status(201).json(student);
+    
   } catch (error) {
     console.error('Create student error:', error);
     res.status(400).json({ message: error.message });
