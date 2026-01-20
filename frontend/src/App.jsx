@@ -19,7 +19,7 @@ import useAuthStore from "./stores/authStore.js"
 import StudentEdit from './components/students/StudentEdit.jsx';
 import FeeReceipt from './components/fees/FeeReceipt';
 import StudentDashboard from './components/dashboard/StudentDashboard.jsx';
-import Feed from './components/feed/feed';
+//import Feed from './components/feed/feed';
 
 function App() {
   const { isAuthenticated, user, initializeAuth } = useAuthStore();
@@ -184,14 +184,14 @@ function App() {
           }
         />
        
-        <Route
+        {/* <Route
           path="/feed"
           element={
             <ProtectedRoute allowedRoles={['admin', 'staff', 'student']}>
               <Feed />
             </ProtectedRoute>
           }
-        />
+        /> */}
 
 
         <Route
