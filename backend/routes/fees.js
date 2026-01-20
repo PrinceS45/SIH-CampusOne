@@ -3,8 +3,8 @@ import { auth, authorize } from '../middleware/auth.js';
 import Fee from '../models/Fee.js';
 import Student from '../models/Student.js';
 import { createLogEntry } from '../middleware/logging.js';
-import { sendFeeReceipt } from '../utils/emailService.js';
 import { LOG_ACTIONS, LOG_MODULES, RESPONSE_MESSAGES } from '../utils/constants.js';
+import sendFeeReceipt from '../scripts/sendFeeReceipt.js';
 
 const router = express.Router();
 
@@ -153,29 +153,28 @@ router.post('/', auth, authorize('admin', 'staff'), async (req, res) => {
       .populate('student')
       .populate('collectedBy');
     
-    // Send email receipt
-    try {
-      await sendFeeReceipt(populatedFee, student);
-    } catch (emailError) {
-      console.error('Error sending fee receipt email:', emailError);
-    }
     
     // Log fee payment
-    await createLogEntry({
-      action: LOG_ACTIONS.FEE_PAYMENT,
-      module: LOG_MODULES.FEE,
-      description: `Fee payment collected: ${fee.receiptNo} for ${student.firstName} ${student.lastName}`,
-      performedBy: req.user._id,
-      targetId: fee._id,
-      targetModel: LOG_MODULES.FEE,
-      changes: {
-        amount: fee.amount,
-        paidAmount: fee.paidAmount,
-        receiptNo: fee.receiptNo
-      }
-    });
+    // await createLogEntry({
+    //   action: LOG_ACTIONS.FEE_PAYMENT,
+    //   module: LOG_MODULES.FEE,
+    //   description: `Fee payment collected: ${fee.receiptNo} for ${student.firstName} ${student.lastName}`,
+    //   performedBy: req.user._id,
+    //   targetId: fee._id,
+    //   targetModel: LOG_MODULES.FEE,
+    //   changes: {
+    //     amount: fee.amount,
+    //     paidAmount: fee.paidAmount,
+    //     receiptNo: fee.receiptNo
+    //   }
+    // });
     
     res.status(201).json(populatedFee);
+
+    // send fee receipt email
+   setImmediate(async () => {
+   await sendFeeReceipt(student.email, populatedFee);
+});
   } catch (error) {
     res.status(400).json({ message: error.message });
   }
