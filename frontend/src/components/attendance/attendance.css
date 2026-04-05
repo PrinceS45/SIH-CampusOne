@@ -1,0 +1,145 @@
+.attendance-container {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 32px 24px;
+  animation: fadeIn 0.4s ease-out;
+}
+
+.attendance-header {
+  margin-bottom: 32px;
+  background: white;
+  padding: 24px;
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+}
+
+.filter-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-top: 20px;
+}
+
+.attendance-table-container {
+  background: white;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 4px 30px rgba(0,0,0,0.06);
+  border: 1px solid rgba(0,0,0,0.02);
+}
+
+.attendance-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.attendance-table th {
+  background: #f8f9fa;
+  padding: 16px;
+  text-align: left;
+  font-weight: 700;
+  color: #555;
+  font-size: 14px;
+  border-bottom: 2px solid #eee;
+}
+
+.attendance-table td {
+  padding: 16px;
+  border-bottom: 1px solid #f0f0f0;
+  vertical-align: middle;
+}
+
+.member-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.member-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.status-toggle {
+  display: flex;
+  gap: 8px;
+}
+
+.status-btn {
+  padding: 6px 16px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  border: 2px solid transparent;
+  transition: all 0.2s;
+}
+
+.status-btn.present { background: #ebfbee; color: #2f9e44; border-color: #d3f9d8; }
+.status-btn.present.active { background: #2f9e44; color: white; border-color: #2f9e44; }
+
+.status-btn.absent { background: #fff5f5; color: #e03131; border-color: #ffe3e3; }
+.status-btn.absent.active { background: #e03131; color: white; border-color: #e03131; }
+
+.status-btn.late { background: #fff9db; color: #f08c00; border-color: #fff3bf; }
+.status-btn.late.active { background: #f08c00; color: white; border-color: #f08c00; }
+
+.submit-section {
+  margin-top: 32px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.primary-button {
+  background: #007bff;
+  color: white;
+  padding: 12px 32px;
+  border: none;
+  border-radius: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 4px 12px rgba(0,123,255,0.3);
+}
+
+.primary-button:hover {
+  background: #0056b3;
+  transform: translateY(-2px);
+}
+
+.primary-button:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.attendance-card {
+  background: white;
+  padding: 20px;
+  border-radius: 12px;
+  margin-bottom: 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+}
+
+.history-status-badge {
+  padding: 4px 12px;
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.badge-present { background: #d3f9d8; color: #2f9e44; }
+.badge-absent { background: #ffe3e3; color: #e03131; }
+.badge-late { background: #fff3bf; color: #f08c00; }
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}

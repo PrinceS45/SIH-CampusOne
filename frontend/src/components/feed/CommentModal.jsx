@@ -1,8 +1,13 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState } from 'react';
 import useFeedStore from '../../stores/feedStore';
+import useAuthStore from '../../stores/authStore';
+import { FaUserCircle } from 'react-icons/fa';
+import Loader from '../common/Loader';
+import { toast } from 'react-hot-toast';
 
 function CommentModal({ feedId, onClose }) {
   const { fetchComments, addComment, likeComment } = useFeedStore();
+  const { user } = useAuthStore();
   const [comments, setComments] = useState([]);
   const [commentText, setCommentText] = useState('');
   const [loading, setLoading] = useState(false);
@@ -29,121 +34,127 @@ function CommentModal({ feedId, onClose }) {
       const newComment = await addComment(feedId, commentText);
       setComments([newComment, ...comments]);
       setCommentText('');
+      toast.success('Comment posted!');
     } catch (error) {
-      console.error("Error adding comment:", error);
+      toast.error(error.response?.data?.message || 'Error adding comment');
     }
   };
 
   const handleLikeComment = async (commentId) => {
     try {
-      await likeComment(commentId);
+      const response = await likeComment(commentId);
       setComments(comments.map(comment => 
         comment._id === commentId 
-          ? { ...comment, likes: comment.likes + 1 }
+          ? { ...comment, likes: response.likes }
           : comment
       ));
+      toast.success(response.message);
     } catch (error) {
-      console.error("Error liking comment:", error);
+      toast.error('Error updating like');
     }
   };
 
   return (
-    <div style={{
-      position: 'fixed',
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      backgroundColor: 'rgba(0,0,0,0.5)',
-      display: 'flex',
-      justifyContent: 'center',
-      alignItems: 'center',
-      zIndex: 1000
-    }}>
-      <div style={{
-        backgroundColor: 'white',
-        borderRadius: '8px',
-        padding: '20px',
-        width: '90%',
-        maxWidth: '500px',
-        maxHeight: '80vh',
-        overflowY: 'auto'
-      }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-          <h3>Comments</h3>
-          <button onClick={onClose} style={{ padding: '5px 10px', cursor: 'pointer' }}>Close</button>
+    <div className="premium-modal-overlay" onClick={onClose}>
+      <div className="premium-modal-content" onClick={(e) => e.stopPropagation()}>
+        <div className="modal-header">
+          <h3 className="modal-title">Comments</h3>
+          <button onClick={onClose} className="close-btn" style={{ background: 'none', border: 'none', fontSize: '24px', cursor: 'pointer' }}>&times;</button>
         </div>
 
-        {/* Add Comment Input */}
-        <div style={{ marginBottom: '20px' }}>
-          <textarea
-            value={commentText}
-            onChange={(e) => setCommentText(e.target.value)}
-            placeholder="Write a comment..."
-            style={{
-              width: '100%',
-              padding: '10px',
-              borderRadius: '5px',
-              border: '1px solid #ddd',
-              minHeight: '80px',
-              fontFamily: 'Arial'
-            }}
-          />
-          <button
-            onClick={handleAddComment}
-            disabled={loading}
-            style={{
-              marginTop: '10px',
-              padding: '10px 20px',
-              backgroundColor: '#007bff',
-              color: 'white',
-              border: 'none',
-              borderRadius: '5px',
-              cursor: 'pointer'
-            }}
-          >
-            {loading ? 'Posting...' : 'Post Comment'}
-          </button>
-        </div>
-
-        {/* Comments List */}
-        <div>
-          {comments && comments.length > 0 ? (
+        <div className="modal-body">
+          {loading ? (
+            <div className="flex justify-center items-center py-12">
+              <Loader message="Loading comments..." />
+            </div>
+          ) : comments && comments.length > 0 ? (
             comments.map((comment) => (
-              <div key={comment._id} style={{
-                backgroundColor: '#f5f5f5',
-                padding: '10px',
-                marginBottom: '10px',
-                borderRadius: '5px'
-              }}>
-                <p style={{ margin: '5px 0', fontWeight: 'bold' }}>
-                  {comment.user?.name || 'User'}
-                </p>
-                <p style={{ margin: '5px 0' }}>{comment.text}</p>
-                <button
-                  onClick={() => handleLikeComment(comment._id)}
-                  style={{
-                    marginTop: '5px',
-                    padding: '5px 10px',
-                    backgroundColor: '#e9ecef',
-                    border: '1px solid #dee2e6',
-                    borderRadius: '3px',
-                    cursor: 'pointer'
-                  }}
-                >
-                  ❤️ {comment.likes || 0}
-                </button>
+              <div key={comment._id} className="comment-item" style={{ marginBottom: '16px', display: 'flex', gap: '12px' }}>
+                {comment.user?.profilePicture ? (
+                  <img 
+                    src={comment.user.profilePicture} 
+                    alt={comment.user?.name} 
+                    style={{ width: '32px', height: '32px', borderRadius: '50%' }}
+                  />
+                ) : (
+                  <FaUserCircle style={{ color: '#ccc', width: '32px', height: '32px' }} />
+                )}
+                <div style={{ flex: 1 }}>
+                  <div style={{ background: '#f0f2f5', padding: '8px 12px', borderRadius: '12px' }}>
+                    <div style={{ fontWeight: '700', fontSize: '13px' }}>{comment.user?.name || 'User'}</div>
+                    <div style={{ fontSize: '14px', color: '#1c1e21' }}>{comment.text}</div>
+                  </div>
+                  <div style={{ display: 'flex', gap: '12px', marginTop: '4px', paddingLeft: '8px' }}>
+                    <button 
+                      onClick={() => handleLikeComment(comment._id)}
+                      style={{ 
+                        background: 'none', 
+                        border: 'none', 
+                        fontSize: '12px', 
+                        fontWeight: '600', 
+                        color: comment.likes?.includes(user?._id || user?.id) ? '#007bff' : '#65676b',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      Like ({comment.likes?.length || 0})
+                    </button>
+                    <span style={{ fontSize: '12px', color: '#65676b' }}>
+                      {new Date(comment.createdAt).toLocaleDateString()}
+                    </span>
+                  </div>
+                </div>
               </div>
             ))
           ) : (
-            <p>No comments yet</p>
+            <div style={{ textAlign: 'center', padding: '40px 0', color: '#65676b' }}>
+              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" style={{ marginBottom: '12px', opacity: 0.5 }}>
+                <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 1 1-7.6-7.6 8.38 8.38 0 0 1 3.8.9L21 3.5z" />
+              </svg>
+              <p>No comments yet. Be the first to share your thoughts!</p>
+            </div>
           )}
         </div>
 
-        {error && <p style={{ color: 'red', marginTop: '10px' }}>Error: {error}</p>}
+        <div className="modal-footer" style={{ padding: '16px', borderTop: '1px solid rgba(0,0,0,0.1)' }}>
+          <div style={{ display: 'flex', gap: '12px', width: '100%', alignItems: 'center' }}>
+            {user?.profilePicture ? (
+              <img 
+                src={user.profilePicture} 
+                alt="Me" 
+                style={{ width: '32px', height: '32px', borderRadius: '50%' }}
+              />
+            ) : (
+              <FaUserCircle style={{ color: '#ccc', width: '32px', height: '32px' }} />
+            )}
+            <textarea
+              value={commentText}
+              onChange={(e) => setCommentText(e.target.value)}
+              placeholder="Write a comment..."
+              className="premium-input"
+              style={{ flex: 1, minHeight: '40px', maxHeight: '120px', resize: 'none' }}
+            />
+            <button
+              onClick={handleAddComment}
+              disabled={!commentText.trim() || loading}
+              style={{
+                background: 'var(--primary-color)',
+                color: 'white',
+                border: 'none',
+                borderRadius: '8px',
+                padding: '8px 16px',
+                fontWeight: '600',
+                cursor: 'pointer',
+                opacity: !commentText.trim() ? 0.5 : 1
+              }}
+            >
+              Post
+            </button>
+          </div>
+        </div>
+        {error && <p style={{ color: 'red', fontSize: '12px', padding: '0 16px 8px' }}>{error}</p>}
       </div>
     </div>
-  )
+  );
 }
 
-export default CommentModal
+export default CommentModal;

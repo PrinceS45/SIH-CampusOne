@@ -20,9 +20,15 @@ const userSchema = new mongoose.Schema({
   },
   role: {
     type: String,
-    enum: ['admin', 'staff', 'student'],
+    enum: ['admin', 'staff', 'student', 'alumni'],
     default: 'staff'
   },
+  // Alumni specific fields
+  company: { type: String, default: '' },
+  position: { type: String, default: '' },
+  graduatedYear: { type: Number },
+  isMentor: { type: Boolean, default: false },
+  linkedinProfile: { type: String, default: '' },
   department: {
     type: String,
     default: ''
@@ -45,6 +51,17 @@ const userSchema = new mongoose.Schema({
   studentProfile: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Student'
+  },
+  // New fields to link staff record
+  staffId: {
+    type: String,
+    unique: true,
+    sparse: true
+  },
+  // Reference to Staff model
+  staffProfile: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Staff'
   }
 }, {
   timestamps: true

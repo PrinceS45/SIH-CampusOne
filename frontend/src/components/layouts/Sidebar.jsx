@@ -7,26 +7,38 @@ import {
   BookOpenIcon,
   BarChartIcon,
   XIcon,
-GalleryHorizontal 
+  GalleryHorizontal,
+  CalendarIcon,
+  GraduationCap,
+  CheckSquare,
+  ClipboardList,
+  UserCheck,
+  Briefcase
 } from 'lucide-react';
 import useAuthStore from '../../stores/authStore';
 
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: HomeIcon },
   { name: 'Students', href: '/students', icon: UsersIcon },
+  { name: 'Staff Management', href: '/staff', icon: Briefcase, adminOnly: true },
   { name: 'Fee Management', href: '/fees', icon: CreditCardIcon },
   { name: 'Hostel Management', href: '/hostels', icon: BuildingIcon },
   { name: 'Exam Records', href: '/exams', icon: BookOpenIcon },
   { name: 'Reports', href: '/reports', icon: BarChartIcon },
+  { name: 'Feed', href: '/feed', icon: GalleryHorizontal },
+  { name: 'Events', href: '/events', icon: CalendarIcon },
+  { name: 'Alumni Network', href: '/alumni', icon: GraduationCap },
+  { name: 'Mark Attendance', href: '/attendance/mark', icon: CheckSquare },
+  { name: 'Attendance History', href: '/attendance/history', icon: ClipboardList },
 ];
-// {name : 'Feed' , href : '/feed' , icon : GalleryHorizontal}
 
 // Student-only navigation (if you want to add student-specific pages later)
 const studentNavigation = [
   { name: 'Dashboard', href: '/dashboard', icon: HomeIcon },
-  // You can add student-specific pages here like:
-  // { name: 'My Grades', href: '/my-grades', icon: BookOpenIcon },
-  // { name: 'My Fees', href: '/my-fees', icon: CreditCardIcon },
+  { name: 'Feed', href: '/feed', icon: GalleryHorizontal },
+  { name: 'Events', href: '/events', icon: CalendarIcon },
+  { name: 'Alumni Network', href: '/alumni', icon: GraduationCap },
+  { name: 'My Attendance', href: '/attendance/my', icon: UserCheck },
 ];
 
 const Sidebar = ({ open, setOpen }) => {
@@ -36,9 +48,10 @@ const Sidebar = ({ open, setOpen }) => {
   // Determine which navigation items to show based on user role
   const getFilteredNavigation = () => {
     if (user?.role === 'student') {
-      return studentNavigation; // Only show dashboard for students
+      return studentNavigation;
     }
-    return navigation; // Show all items for admin/staff
+    // Filter out admin-only items if user is not admin
+    return navigation.filter(item => !item.adminOnly || user?.role === 'admin');
   };
 
   const filteredNavigation = getFilteredNavigation();
@@ -113,6 +126,11 @@ const Sidebar = ({ open, setOpen }) => {
               {user?.studentId && (
                 <p className="text-blue-200 text-sm mt-1">
                   ID: {user.studentId}
+                </p>
+              )}
+              {user?.staffId && (
+                <p className="text-blue-200 text-sm mt-1">
+                  ID: {user.staffId}
                 </p>
               )}
             </div>

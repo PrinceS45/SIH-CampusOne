@@ -115,7 +115,6 @@ feeSchema.methods.checkDueDate = async function () {
 
 // Indexes for better query performance
 feeSchema.index({ student: 1 });
-feeSchema.index({ receiptNo: 1 });
 feeSchema.index({ paymentDate: 1 });
 feeSchema.index({ status: 1 });
 
