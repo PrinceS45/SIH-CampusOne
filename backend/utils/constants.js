@@ -17,6 +17,7 @@ export const LOG_MODULES = {
   HOSTEL: 'HOSTEL',
   USER: 'USER',
   AUTH: 'AUTH',
+  STAFF: 'STAFF',
   SYSTEM: 'SYSTEM'
 };
 

@@ -1,4 +1,6 @@
 import User from '../models/User.js';
+import Student from '../models/Student.js';
+import Staff from '../models/Staff.js';
 import Log from '../models/Log.js';
 import generateToken from '../utils/generateToken.js';
 import { createLogEntry } from '../middleware/logging.js';
@@ -18,13 +20,30 @@ const registerUser = async (req, res) => {
     }
 
     // Create user
-    const user = await User.create({
+    const user = new User({
       name,
       email,
       password,
       role,
       department
     });
+
+    // Automatically link profile if it exists
+    if (role === 'student') {
+      const student = await Student.findOne({ email });
+      if (student) {
+        user.studentProfile = student._id;
+        user.studentId = student.studentId;
+      }
+    } else if (role === 'staff') {
+      const staff = await Staff.findOne({ email });
+      if (staff) {
+        user.staffProfile = staff._id;
+        user.staffId = staff.staffId;
+      }
+    }
+
+    await user.save();
 
     if (user) {
       // Log the user registration

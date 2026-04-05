@@ -17,6 +17,9 @@ import examRoutes from './routes/exams.js';
 import dashboardRoutes from './routes/dashboard.js';
 import logRoutes from './routes/logs.js';
 import feedRoutes from './routes/feed.js';
+import eventRoutes from './routes/events.js';
+import attendanceRoutes from './routes/attendance.js';
+import staffRoutes from './routes/staff.js';
 
 import errorHandler from './middleware/error.js';
 import { requestLogger } from './middleware/logging.js';
@@ -85,6 +88,9 @@ app.use('/api/exams', examRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/logs', logRoutes);
 app.use('/api/feed', feedRoutes);
+app.use('/api/events', eventRoutes);
+app.use('/api/attendance', attendanceRoutes);
+app.use('/api/staff', staffRoutes);
 
 // Health check endpoint (no rate limiting)
 app.get('/health', (req, res) => {

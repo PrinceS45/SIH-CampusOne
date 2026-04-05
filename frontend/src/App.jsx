@@ -1,6 +1,8 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { useEffect } from 'react';
+import { Toaster } from 'react-hot-toast';
 import Layout from "./components/layouts/Layout.jsx"
+import Loader from './components/common/Loader';
 import Login from './components/auth/Login';
 import AdminDashboard from './components/dashboard/AdminDashboard';
 import StudentList from './components/students/StudentList';
@@ -19,7 +21,15 @@ import useAuthStore from "./stores/authStore.js"
 import StudentEdit from './components/students/StudentEdit.jsx';
 import FeeReceipt from './components/fees/FeeReceipt';
 import StudentDashboard from './components/dashboard/StudentDashboard.jsx';
-//import Feed from './components/feed/feed';
+import Feed from './components/feed/Feed';
+import EventCalendar from './components/calendar/EventCalendar';
+import AlumniNetwork from './components/alumni/AlumniNetwork';
+import MarkAttendance from './components/attendance/MarkAttendance';
+import AttendanceHistory from './components/attendance/AttendanceHistory';
+import MyAttendance from './components/attendance/MyAttendance';
+import StaffList from './components/staff/StaffList';
+import StaffForm from './components/staff/StaffForm';
+import StaffProfile from './components/staff/StaffProfile';
 
 function App() {
   const { isAuthenticated, user, initializeAuth } = useAuthStore();
@@ -41,8 +51,13 @@ function App() {
     return <Layout>{children}</Layout>;
   };
 
+  if (isAuthenticated === undefined) {
+    return <Loader fullPage message="Initializing CampusOne..." />;
+  }
+
   return (
     <Router>
+      <Toaster position="top-right" reverseOrder={false} />
       <Routes>
         <Route
           path="/login"
@@ -184,15 +199,97 @@ function App() {
           }
         />
        
-        {/* <Route
+        <Route
           path="/feed"
           element={
-            <ProtectedRoute allowedRoles={['admin', 'staff', 'student']}>
+            <ProtectedRoute allowedRoles={['admin', 'staff', 'student', 'alumni']}>
               <Feed />
             </ProtectedRoute>
           }
-        /> */}
+        />
 
+        <Route
+          path="/events"
+          element={
+            <ProtectedRoute allowedRoles={['admin', 'staff', 'student', 'alumni']}>
+              <EventCalendar />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/alumni"
+          element={
+            <ProtectedRoute allowedRoles={['admin', 'staff', 'student', 'alumni']}>
+              <AlumniNetwork />
+            </ProtectedRoute>
+          }
+        />
+
+
+        <Route
+          path="/attendance/mark"
+          element={
+            <ProtectedRoute allowedRoles={['admin', 'staff']}>
+              <MarkAttendance />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/attendance/history"
+          element={
+            <ProtectedRoute allowedRoles={['admin', 'staff']}>
+              <AttendanceHistory />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/attendance/my"
+          element={
+            <ProtectedRoute allowedRoles={['student', 'staff', 'admin', 'alumni']}>
+              <MyAttendance />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Staff Management Routes */}
+        <Route
+          path="/staff"
+          element={
+            <ProtectedRoute allowedRoles={['admin']}>
+              <StaffList />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/staff/new"
+          element={
+            <ProtectedRoute allowedRoles={['admin']}>
+              <StaffForm />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/staff/:id"
+          element={
+            <ProtectedRoute allowedRoles={['admin', 'staff']}>
+              <StaffProfile />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/staff/:id/edit"
+          element={
+            <ProtectedRoute allowedRoles={['admin']}>
+              <StaffForm />
+            </ProtectedRoute>
+          }
+        />
 
         <Route
           path="/"

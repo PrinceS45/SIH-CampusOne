@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { EyeIcon, EyeOffIcon, MailIcon, LockIcon, UserIcon, IdCardIcon } from 'lucide-react';
 import useAuthStore from '../../stores/authStore';
 import api from '../../services/api';
+import Loader from '../common/Loader';
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -83,6 +84,7 @@ const Login = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+      {loading && <Loader fullPage message={isRegistering ? "Creating your account..." : "Signing you in..."} />}
       <div className="max-w-md w-full space-y-8">
         <div>
           <div className="mx-auto h-12 w-12 bg-blue-500 rounded-full flex items-center justify-center">

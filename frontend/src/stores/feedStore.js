@@ -124,7 +124,18 @@ const useFeedStore = create((set, get) => ({
     }
   },
 
-  // Like a comment
+  // Get users who liked a feed post
+  fetchLikedUsers: async (feedId) => {
+    try {
+      const response = await api.get(`/feed/liked-by/${feedId}`);
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching liked users:", error);
+      throw error;
+    }
+  },
+
+  // Like or unlike a comment
   likeComment: async (commentId) => {
     set({ loading: true, error: null });
     try {
@@ -147,7 +158,7 @@ const useFeedStore = create((set, get) => ({
     }
   },
 
-  // Like a feed post
+  // Like or unlike a feed post
   likeFeed: async (feedId) => {
     set({ loading: true, error: null });
     try {

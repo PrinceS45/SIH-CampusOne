@@ -7,7 +7,7 @@ const useAuthStore = create(
     (set, get) => ({
       user: null,
       token: null,
-      isAuthenticated: false,
+      isAuthenticated: undefined, // undefined during initialization, then true/false
       loading: false,
       error: null,
       

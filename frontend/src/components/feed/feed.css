@@ -1,0 +1,307 @@
+:root {
+  --primary-color: #007bff;
+  --secondary-color: #6c757d;
+  --bg-color: #f8f9fa;
+  --card-bg: #ffffff;
+  --text-main: #1a1a1b;
+  --text-sub: #5f6368;
+  --border-color: rgba(0, 0, 0, 0.08);
+  --shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  --radius: 12px;
+  --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.feed-container {
+  max-width: 680px;
+  margin: 0 auto;
+  padding: 24px 16px;
+  animation: fadeIn 0.5s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.feed-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 32px;
+  position: sticky;
+  top: 0;
+  background: rgba(248, 249, 250, 0.8);
+  backdrop-filter: blur(10px);
+  padding: 12px 0;
+  z-index: 10;
+}
+
+.feed-title {
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--text-main);
+  letter-spacing: -0.5px;
+}
+
+.create-post-btn {
+  background: var(--primary-color);
+  color: white;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  transition: var(--transition);
+  box-shadow: 0 4px 6px rgba(0, 123, 255, 0.2);
+}
+
+.create-post-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(0, 123, 255, 0.3);
+  filter: brightness(1.1);
+}
+
+.feed-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius);
+  margin-bottom: 24px;
+  overflow: hidden;
+  transition: var(--transition);
+  box-shadow: var(--shadow);
+}
+
+.feed-card:hover {
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+}
+
+.feed-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px;
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.user-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #fff;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.username {
+  font-weight: 700;
+  color: var(--text-main);
+  font-size: 15px;
+}
+
+.post-time {
+  font-size: 12px;
+  color: var(--text-sub);
+}
+
+.delete-btn {
+  background: #fff5f5;
+  color: #ff4d4d;
+  border: none;
+  border-radius: 8px;
+  padding: 8px;
+  cursor: pointer;
+  transition: var(--transition);
+  opacity: 0.6;
+}
+
+.delete-btn:hover {
+  opacity: 1;
+  background: #ffe3e3;
+}
+
+.feed-content {
+  padding: 0 16px 16px;
+}
+
+.feed-text {
+  font-size: 16px;
+  line-height: 1.5;
+  color: #2c2e35;
+  margin-bottom: 16px;
+}
+
+.feed-image-container {
+  margin: 0 -16px 16px;
+  position: relative;
+  overflow: hidden;
+  max-height: 500px;
+}
+
+.feed-image {
+  width: 100%;
+  height: auto;
+  display: block;
+  transition: transform 0.5s ease;
+}
+
+.feed-image:hover {
+  transform: scale(1.02);
+}
+
+.feed-actions {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 12px 16px;
+  border-top: 1px solid var(--border-color);
+}
+
+.action-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: transparent;
+  border: none;
+  color: var(--text-sub);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 8px 12px;
+  border-radius: 8px;
+  transition: var(--transition);
+}
+
+.action-btn:hover {
+  background: #f0f2f5;
+  color: var(--text-main);
+}
+
+.action-btn.liked {
+  color: #ff4d4d;
+}
+
+.action-btn.liked svg {
+  fill: #ff4d4d;
+}
+
+.liked-by-section {
+  padding: 8px 16px;
+  font-size: 13px;
+  color: var(--text-sub);
+  border-top: 1px solid var(--border-color);
+  cursor: pointer;
+}
+
+.liked-by-section:hover {
+  text-decoration: underline;
+}
+
+.comment-preview {
+  background: #f9fafb;
+  margin: 0 16px 16px;
+  padding: 12px;
+  border-radius: 10px;
+}
+
+.preview-user {
+  font-weight: 700;
+  font-size: 13px;
+  margin-bottom: 4px;
+}
+
+.preview-text {
+  font-size: 14px;
+  color: #4a4a4a;
+}
+
+/* Modal Styling */
+.premium-modal-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(4px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  animation: fadeIn 0.3s ease;
+}
+
+.premium-modal-content {
+  background: white;
+  border-radius: 20px;
+  width: 90%;
+  max-width: 500px;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+  position: relative;
+  overflow: hidden;
+}
+
+.modal-header {
+  padding: 20px;
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.modal-body {
+  padding: 20px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.modal-footer {
+  padding: 16px 20px;
+  border-top: 1px solid var(--border-color);
+  display: flex;
+  gap: 12px;
+}
+
+.premium-input {
+  width: 100%;
+  padding: 12px 16px;
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  font-size: 15px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.premium-input:focus {
+  border-color: var(--primary-color);
+}
+
+.alumni-badge {
+  background: #e7f5ff;
+  color: #1c7ed6;
+  font-size: 11px;
+  font-weight: 800;
+  padding: 2px 8px;
+  border-radius: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border: 1px solid #d0ebff;
+}
+
+.referral-tag {
+  background: linear-gradient(135deg, #ebfbee 0%, #d3f9d8 100%);
+  color: #2b8a3e;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 8px 12px;
+  border-radius: 10px;
+  margin-bottom: 12px;
+  display: inline-block;
+  border: 1px solid #b2f2bb;
+  box-shadow: 0 2px 8px rgba(43, 138, 62, 0.08);
+}

@@ -15,10 +15,10 @@ const CommentSchema = new mongoose.Schema(
     text : {
         type: String,
     } , 
-    likes : {
-        type : Number , 
-        default : 0 ,
-    } , 
+    likes : [{
+        type : mongoose.Schema.Types.ObjectId,
+        ref : "User" , 
+    }] , 
 }  , {timestamps : true})  ; 
 
 const Comment = mongoose.model("Comment" , CommentSchema) ;

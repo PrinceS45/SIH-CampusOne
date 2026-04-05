@@ -1,4 +1,5 @@
 import { ChevronLeftIcon, ChevronRightIcon } from 'lucide-react';
+import Loader from './Loader';
 
 const Table = ({ columns, data, pagination, onPageChange, loading }) => {
   const { page, limit, totalPages, totalRecords } = pagination || {};
@@ -17,10 +18,8 @@ const Table = ({ columns, data, pagination, onPageChange, loading }) => {
 
   if (loading) {
     return (
-      <div className="bg-white shadow rounded-lg overflow-hidden">
-        <div className="flex justify-center items-center py-8">
-          <div className="loader ease-linear rounded-full border-4 border-t-4 border-gray-200 h-8 w-8"></div>
-        </div>
+      <div className="bg-white shadow rounded-lg overflow-hidden min-h-[400px] flex items-center justify-center">
+        <Loader message="Fetching data..." />
       </div>
     );
   }
