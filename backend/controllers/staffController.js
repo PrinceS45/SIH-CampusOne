@@ -3,6 +3,8 @@ import User from '../models/User.js';
 import { sendWelcomeEmail } from '../utils/emailService.js';
 import { createLogEntry } from '../middleware/logging.js';
 import { LOG_ACTIONS, LOG_MODULES, RESPONSE_MESSAGES } from '../utils/constants.js';
+import { cloudinaryUpload, deleteFromCloudinary } from '../lib/cloudinary.js';
+import { generatePassword } from '../utils/helpers.js';
 
 // @desc    Get all staff with filtering
 // @route   GET /api/staff
@@ -73,7 +75,11 @@ const createStaff = async (req, res) => {
         }
         
         if (req.file) {
-            staffData.photo = `/uploads/${req.file.filename}`;
+            const fileInfo = await cloudinaryUpload(req.file);
+            if (fileInfo) {
+                staffData.photo = fileInfo.secure_url;
+                staffData.photoPublicId = fileInfo.public_id;
+            }
         }
         
         const staffExists = await Staff.findOne({ email: staffData.email });
@@ -83,6 +89,29 @@ const createStaff = async (req, res) => {
         
         const staff = new Staff(staffData);
         await staff.save();
+
+        // If User already exists with this email, link the staff profile, otherwise create a new User account
+        let passwordToSend = "Use your existing account password";
+        const existingUser = await User.findOne({ email: staff.email });
+        let userToSendMail = existingUser;
+
+        if (existingUser) {
+            existingUser.staffProfile = staff._id;
+            existingUser.staffId = staff.staffId;
+            await existingUser.save();
+        } else {
+            const password = generatePassword();
+            passwordToSend = password;
+            userToSendMail = await User.create({
+                name: `${staff.firstName} ${staff.lastName}`,
+                email: staff.email,
+                password,
+                role: 'staff',
+                department: staff.department,
+                staffProfile: staff._id,
+                staffId: staff.staffId
+            });
+        }
         
         // Log staff creation
         await createLogEntry({
@@ -96,11 +125,7 @@ const createStaff = async (req, res) => {
         });
 
         // Trigger welcome email
-        await sendWelcomeEmail({ 
-            name: `${staff.firstName} ${staff.lastName}`,
-            email: staff.email,
-            role: 'staff'
-        }, "Password creation link sent if user requested.");
+        await sendWelcomeEmail(userToSendMail, passwordToSend);
         
         res.status(201).json(staff);
     } catch (error) {
@@ -126,7 +151,14 @@ const updateStaff = async (req, res) => {
         }
         
         if (req.file) {
-            updateData.photo = `/uploads/${req.file.filename}`;
+            if (staff.photoPublicId) {
+                await deleteFromCloudinary(staff.photoPublicId);
+            }
+            const fileInfo = await cloudinaryUpload(req.file);
+            if (fileInfo) {
+                updateData.photo = fileInfo.secure_url;
+                updateData.photoPublicId = fileInfo.public_id;
+            }
         }
         
         const updatedStaff = await Staff.findByIdAndUpdate(
@@ -161,6 +193,10 @@ const deleteStaff = async (req, res) => {
         
         if (!staff) {
             return res.status(404).json({ message: RESPONSE_MESSAGES.NOT_FOUND });
+        }
+        
+        if (staff.photoPublicId) {
+            await deleteFromCloudinary(staff.photoPublicId);
         }
         
         await Staff.findByIdAndDelete(req.params.id);
