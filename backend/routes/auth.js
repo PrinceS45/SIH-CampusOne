@@ -27,14 +27,31 @@ router.post('/register', auth, authorize('admin'), async (req, res) => {
     // Generate random password
     const password = generatePassword();
 
-    // Create user
-    const user = await User.create({
+    const userData = {
       name,
       email,
       password,
       role,
       department
-    });
+    };
+
+    // Automatically link profile if it exists
+    if (role === 'student') {
+      const student = await Student.findOne({ email });
+      if (student) {
+        userData.studentProfile = student._id;
+        userData.studentId = student.studentId;
+      }
+    } else if (role === 'staff') {
+      const staff = await Staff.findOne({ email });
+      if (staff) {
+        userData.staffProfile = staff._id;
+        userData.staffId = staff.staffId;
+      }
+    }
+
+    // Create user
+    const user = await User.create(userData);
 
     if (user) {
       // Send welcome email
